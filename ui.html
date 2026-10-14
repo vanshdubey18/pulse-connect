@@ -178,7 +178,7 @@ function render(){
     h=head('book',t('syncT'),t('syncP'))+`<ul class="prog">${all.map(x=>`<li class="${done.includes(x)?'done':x===now?'now':''}"><i></i>${esc(x)}</li>`).join('')}</ul>`;
   } else if(step==='live'){
     h=head('check',t('liveT'),t('liveP'),'good')+`<div class="facts"><div><small>${t('company')}</small><b>${esc(title(s.company))}</b></div>
-      <div><small>${t('tally')}</small><b>${esc(s.tally.release||s.tally.product||'Tally')}${s.tally.vcc&&!s.tally.pids?.length?' (cloud)':''}</b></div>
+      <div><small>${t('tally')}</small><b>${esc([s.tally.product,s.tally.release].filter(Boolean).join(' ')||'Tally')}${s.tally.vcc&&!s.tally.pids?.length?' (cloud)':''}</b></div>
       <div><small>${t('last')}</small><b>${esc(s.last_sync_ago||'—')}</b></div></div>
       <div class="row"><button onclick="act('sync_now')">${t('syncNow')}</button>${(s.companies||[]).length>1?`<button class="ghost" onclick="act('change_company')">${t('change')}</button>`:''}</div>`;
   } else if(step==='error'){

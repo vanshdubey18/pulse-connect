@@ -15,7 +15,7 @@ R = [
  ('Switch on Ask TMS', 'Switch on Ask Pulse'), ('Saved. Ask TMS is on.', 'Saved. Ask Pulse is on.'),
  ('Government hospitals owe ${inr(R.govt)} (${pct(R.govt,R.govt+R.private)}%).', '${R.govt>0?`Government buyers owe ${inr(R.govt)} (${pct(R.govt,R.govt+R.private)}%).`:\'\'}'),
  ('You are the finance assistant inside "TMS Business Pulse", the owner\'s dashboard for ${M.company} (Techno Med Services), a medical equipment and consumables distributor in Jammu & Srinagar that sells mostly to government hospitals (JKMSCL, GMC, SKIMS, AIIMS, district hospitals) and private dealers. The person asking is the owner or his family; they are not accountants.',
-  'You are the finance assistant inside "Business Pulse", the owner\'s dashboard for ${M.company}, an Indian business that keeps its books in Tally. The person asking is the owner or their family; they are not accountants.'),
+  'You are the finance assistant inside "Business Pulse", the owner\'s dashboard for ${M.company}${M.about?\' (\'+M.about+\')\':\', an Indian business that keeps its books in Tally\'}. The person asking is the owner or their family; they are not accountants.'),
  ('Credit notes and journal deductions (TDS, JKMSCL deductions) are separate.', 'Credit notes and journal deductions (e.g. TDS) are separate.'),
  ('- "govt" customers are identified by name (Managing Director, JKMSCL, GMC, hospital, director, etc.).', '- "govt" customers are identified by name (Government, Department, Directorate, Municipal, etc.).'),
  ('(e.g. "GMC" as "GMS")', '(e.g. a short name misheard)'),
@@ -27,7 +27,7 @@ for a, b in R:
     t = t.replace(a, b)
 # Logo initials from the company name; hide the Government/Private split when nobody is government.
 a = "$('#coName').innerHTML="
-t = t.replace(a, "$('#coLogo').textContent=(M.company.match(/\\b[A-Za-z]/g)||['P']).slice(0,3).join('').toUpperCase();" + a, 1)
+t = t.replace(a, "$('#coLogo').textContent=M.brand||(M.company.match(/\\b[A-Za-z]/g)||['P']).slice(0,3).join('').toUpperCase();if(M.ask_label){const f=$('#askFab');if(f&&f.lastChild)f.lastChild.textContent=M.ask_label;}" + a, 1)
 a = "const g=R.govt,pv=R.private,tt=(g+pv)||1;"
 t = t.replace(a, a + "{const gs=$('#govSplit');const box=gs&&gs.closest('.card');if(box)box.style.display=g>0?'':'none';const ct=$('#custTabs');if(ct)ct.style.display=g>0?'':'none';}", 1)
 for bad in ("Techno Med", "JKMSCL", "TMS Pulse", "Ask TMS"):

@@ -16,7 +16,7 @@ import sys, threading, time, traceback, urllib.error, urllib.request, webbrowser
 from pathlib import Path
 from types import SimpleNamespace
 
-VERSION = "1.0.4"
+VERSION = "1.0.5"
 APP = "Pulse Connect"
 UI_PORT = 47819
 SITE = "https://tms-pulse-blush.vercel.app"
@@ -349,7 +349,7 @@ def detect(cfg):
             _REL.update({"key": key, "t": time.time(), "v": tally_release(host, found[0])})
         release, rpath = _REL["v"]
         if release:
-            product = ("Tally.ERP 9" if "erp" in release.lower() or release.strip().startswith(("6", "5", "4")) else "TallyPrime") if not product else product
+            product = product or ("Tally.ERP 9" if "erp" in release.lower() else None)
     return {"release": release, "running": bool(tally_pids) or bool(found), "pids": tally_pids, "exe": exe, "installs": [str(i) for i in installs[:5]],
             "ini": str(ini) if ini else None, "port": found[0] if found else None, "banner": found[1] if found else None,
             "product": product, "vcc": vcc_info(), "host": host}
@@ -447,6 +447,11 @@ class Connector:
         except Exception as e:
             return {"ok": False, "error": "Couldn't connect just now ({}). Try again.".format(e)}
         with self.lock:
+            if self.cfg.get("code") != code:      # a different business: start fresh (first full upload)
+                for k in ("last_sync_ts", "last_alt", "settings"): self.cfg.pop(k, None)
+                self.last_sync = None; self.last_alt = None
+                try: (HOME / "month_sig.json").unlink()
+                except Exception: pass
             self.cfg.update({"code": code, "push_key": res["push_key"], "business": res.get("name") or st.get("name"), "paired_at": time.time()})
             save_cfg(self.cfg)
         self.write_cloud_cfg()
@@ -483,6 +488,23 @@ class Connector:
                 log("push key rejected - unpairing"); self.unpair()
         except Exception as e:
             log("status push failed:", e)
+
+    # -- per-business settings kept in the cloud (brand, how to describe the business to the assistant, govt buyers)
+    GENERIC_GOVT = ("GOVT", "GOVERNMENT", "DIRECTORATE", "DEPARTMENT OF", "MUNICIPAL", "NAGAR NIGAM", "MINISTRY", "COMMISSIONER",
+                    "DISTRICT HOSPITAL", "MEDICAL COLLEGE", "ARMY", "DEFENCE", "CRPF", "BSF", "RAILWAY", "COLLECTORATE", "PANCHAYAT")
+    def load_settings(self):
+        try:
+            r = rpc("get_settings", {"push_key": self.cfg["push_key"]}, timeout=20) or {}
+            st = r.get("settings") or {}
+            with self.lock:
+                self.cfg["settings"] = st
+                if r.get("name"): self.cfg["business"] = r["name"]
+                save_cfg(self.cfg)
+        except Exception as e:
+            log("settings fetch failed (using saved):", e)
+        st = self.cfg.get("settings") or {}
+        engine.GOVT_WORDS = tuple(w.upper() for w in st.get("govt_words") or []) or self.GENERIC_GOVT
+        return st
 
     # -- precise change tracking: which months were edited, added to or deleted from since last time
     def month_signatures(self):
@@ -538,14 +560,17 @@ class Connector:
         buf = _Progress(self)
         t0 = time.time()
         self.invalidate_changed()
+        settings = self.load_settings()
         try:
             old = sys.stdout; sys.stdout = buf
             try:
                 data = engine.sync(args)
             finally:
                 sys.stdout = old
-            data["meta"]["product"] = self.tally.get("release") or self.tally.get("product")
+            data["meta"]["product"] = " ".join(x for x in (self.tally.get("product"), self.tally.get("release")) if x) or "Tally"
             data["meta"]["connector"] = VERSION
+            for k in ("brand", "about", "ask_label"):
+                if settings.get(k): data["meta"][k] = settings[k]
             self.set("syncing", "Uploading to your dashboard…", "")
             engine.cloud_push(data)
             self.last_sync = time.time()
@@ -925,8 +950,7 @@ def main():
     engine.HERE = HOME; engine.CACHE = HOME / "cache"; engine.TEMPLATE = RES / "pulse_template.html"
     engine.OUTPUT = HOME / "dashboard.html"; engine.DATA_OUT = HOME / "data.json"; engine.CLOUD_CFG = HOME / "cloud_config.txt"
     engine.WA_SENT = engine.CACHE / "whatsapp_sent.txt"; engine.TOKEN_FILE = engine.CACHE / "phone_key.txt"
-    engine.GOVT_WORDS = ("GOVT", "GOVERNMENT", "DIRECTORATE", "DEPARTMENT OF", "MUNICIPAL", "NAGAR NIGAM", "MINISTRY", "COMMISSIONER",
-                         "DISTRICT HOSPITAL", "MEDICAL COLLEGE", "ARMY", "DEFENCE", "CRPF", "BSF", "RAILWAY", "COLLECTORATE", "PANCHAYAT")
+    engine.GOVT_WORDS = Connector.GENERIC_GOVT
     engine.TIMEOUT = 300
 
     C = Connector()
