@@ -19,18 +19,24 @@ jobs:
           $v = (Select-String -Path pulse_connect.py -Pattern '^VERSION = "(.+)"').Matches[0].Groups[1].Value
           "PULSE_VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Compile (real Windows program, no self-unpacking)
-        shell: cmd
+        shell: pwsh
         run: |
-          python -m pip install --upgrade pip nuitka==2.5.9 ordered-set zstandard
-          python make_generic.py dashboard_template.html pulse_template.html
-          python -m nuitka --standalone --assume-yes-for-downloads --msvc=latest ^
-            --windows-console-mode=disable --windows-icon-from-ico=pulse.ico ^
-            --company-name="Maple Peak" --product-name="Pulse Connect" ^
-            --file-version=%PULSE_VERSION% --product-version=%PULSE_VERSION% ^
-            --file-description="Pulse Connect - links Tally to Business Pulse" ^
-            --copyright="Maple Peak" ^
-            --include-data-files=ui.html=ui.html --include-data-files=pulse_template.html=pulse_template.html ^
-            --output-filename=PulseConnect.exe --output-dir=dist pulse_connect.py
+          python -m pip install --upgrade pip nuitka ordered-set zstandard *> build.log
+          python make_generic.py dashboard_template.html pulse_template.html *>> build.log
+          python -m nuitka --standalone --assume-yes-for-downloads --msvc=latest `
+            --windows-console-mode=disable --windows-icon-from-ico=pulse.ico `
+            --company-name="Maple Peak" --product-name="Pulse Connect" `
+            --file-version=$env:PULSE_VERSION --product-version=$env:PULSE_VERSION `
+            --file-description="Pulse Connect - links Tally to Business Pulse" `
+            --copyright="Maple Peak" `
+            --include-data-files=ui.html=ui.html --include-data-files=pulse_template.html=pulse_template.html `
+            --output-filename=PulseConnect.exe --output-dir=dist pulse_connect.py *>> build.log
+          $code = $LASTEXITCODE
+          if ($code -ne 0 -or -not (Test-Path dist\pulse_connect.dist\PulseConnect.exe)) {
+            $tail = (Get-Content build.log -Tail 40) -join '%0A'
+            Write-Output "::error title=Compile failed::$tail"
+            exit 1
+          }
       - name: Self-test (compiled app starts and serves its UI)
         shell: pwsh
         run: |
