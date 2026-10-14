@@ -16,7 +16,7 @@ import sys, threading, time, traceback, urllib.error, urllib.request, webbrowser
 from pathlib import Path
 from types import SimpleNamespace
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 APP = "Pulse Connect"
 UI_PORT = 47819
 SITE = "https://tms-pulse-blush.vercel.app"
@@ -505,6 +505,10 @@ class Connector:
             log("settings fetch failed (using saved):", e)
         st = self.cfg.get("settings") or {}
         engine.GOVT_WORDS = tuple(w.upper() for w in st.get("govt_words") or []) or self.GENERIC_GOVT
+        try: engine.DEFAULT_CREDIT_DAYS = int(st.get("credit_days") or 30)
+        except (TypeError, ValueError): engine.DEFAULT_CREDIT_DAYS = 30
+        try: engine.GOVT_CREDIT_DAYS = int(st["govt_credit_days"]) if st.get("govt_credit_days") not in (None, "") else None
+        except (TypeError, ValueError): engine.GOVT_CREDIT_DAYS = None
         return st
 
     # -- precise change tracking: which months were edited, added to or deleted from since last time

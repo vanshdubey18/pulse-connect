@@ -353,7 +353,13 @@ def sync(args):
     return data
 
 # ---------------------------------------------------------------- compute
-def fifo_age(parties, bills, sign, today, members=None):
+DEFAULT_CREDIT_DAYS = 30        # used when a bill has no credit period in Tally (due date = bill date)
+GOVT_CREDIT_DAYS = None         # optional separate default for government buyers
+def credit_days_for(party, group=""):
+    if GOVT_CREDIT_DAYS is not None and is_govt(party, group): return GOVT_CREDIT_DAYS
+    return DEFAULT_CREDIT_DAYS
+
+def fifo_age(parties, bills, sign, today, members=None, groups_of=None):
     """parties: {name: outstanding>0}. bills: open bills (amount sign: Dr<0 for receivable).
     Allocates each party's real outstanding (ledger balance) to its NEWEST open bills first.
     Returns per-party aged bills + bucket totals + stale amount (bills open in Tally but already settled)."""
@@ -375,7 +381,9 @@ def fifo_age(parties, bills, sign, today, members=None):
             bd = tdate(b["date"])
             age = (today - bd).days if bd else None
             dd = tdate(b.get("due") or "")
-            od = (today - dd).days if dd else (b.get("od") or None)   # days past the agreed due date (credit period)
+            if bd and (not dd or dd <= bd):   # no credit period entered in Tally: use the business's usual terms
+                dd = bd + dt.timedelta(days=credit_days_for(p, (groups_of or {}).get(p, "")))
+            od = (today - dd).days if dd else None   # days past the due date
             aged.append({"ref": b["ref"], "date": bd.isoformat() if bd else b["date"], "amt": round(take), "age": age,
                          "od": od if od and od > 0 else 0})
         if left > 0.5: aged.append({"ref": "(no bill reference)", "date": "", "amt": round(left), "age": None})
@@ -427,8 +435,8 @@ def compute(args, today, now, groups, vtypes, led_now, led_ly, month_led, months
             elif bal < -0.5: cred_dr[n] = -bal
     debt_set = {n for n, c in led_class.items() if c == "Sundry Debtors"}
     cred_set = {n for n, c in led_class.items() if c == "Sundry Creditors"}
-    recv_party, recv_buckets, recv_stale = fifo_age(debt_dr, bills_r, -1, today, debt_set)
-    pay_party, pay_buckets, pay_stale = fifo_age(cred_cr, bills_p, 1, today, cred_set)
+    recv_party, recv_buckets, recv_stale = fifo_age(debt_dr, bills_r, -1, today, debt_set, led_group)
+    pay_party, pay_buckets, pay_stale = fifo_age(cred_cr, bills_p, 1, today, cred_set, led_group)
     recv_past_due = sum(a["amt"] for al in recv_party.values() for a in al if a.get("od"))
     pay_past_due = sum(a["amt"] for al in pay_party.values() for a in al if a.get("od"))
     to_collect = sum(debt_dr.values()); to_pay = sum(cred_cr.values())
@@ -595,7 +603,7 @@ def compute(args, today, now, groups, vtypes, led_now, led_ly, month_led, months
                       "vals": {"B": cur["billed"], "C": cur["collected"]}})
     if recv_past_due > 0 and to_collect > 0:
         n_pd = sum(1 for al in recv_party.values() if any(x.get("od") for x in al))
-        brief.append({"tone": "warn", "text": "{P} is past the due date you agreed with customers (" + str(n_pd) + " customers). Chase these first.",
+        brief.append({"tone": "warn", "text": "{P} is past its due date (" + str(n_pd) + " customers" + ("" if GOVT_CREDIT_DAYS is None else ", allowing " + str(GOVT_CREDIT_DAYS) + " days for government buyers") + ", " + str(DEFAULT_CREDIT_DAYS) + " days for others where Tally has no credit period). Chase these first.",
                       "vals": {"P": recv_past_due}})
     old = recv_buckets["180+"]
     if old > 0:
@@ -642,7 +650,7 @@ def compute(args, today, now, groups, vtypes, led_now, led_ly, month_led, months
         "columns": {
             "customers": ["name", "type", "balance_owed_to_us(+)/advance_held(-)", "older_than_90d", "oldest_bill_age_days", "billed_last_12m_incl_gst", "collected_last_12m", "last_bill_date", "last_receipt_date"],
             "customer_monthly": "month -> [billed, collected] for the 60 most active customers",
-            "customer_bills": "customer -> open bills [ref, bill_date, amount_outstanding, age_days, days_past_due_date] (newest-first matching to ledger balance; due date = bill date + credit period in Tally)",
+            "customer_bills": "customer -> open bills [ref, bill_date, amount_outstanding, age_days, days_past_due_date] (newest-first matching to ledger balance; due date = bill date + credit period in Tally, or the business's usual terms (meta.credit_terms) when Tally has none)",
             "suppliers": ["name", "we_owe(+)/advance_paid(-)", "older_than_90d", "oldest_bill_age_days", "purchased_last_12m_incl_gst", "paid_last_12m", "last_purchase_date"],
             "items_sold": ["item", "stock_group", "sales_value_12m", "qty_sold_12m", "last_sold", "stock_qty_now", "stock_value_now"],
             "stock": ["item", "group", "qty", "unit", "value", "not_moved_180d"],
@@ -656,7 +664,7 @@ def compute(args, today, now, groups, vtypes, led_now, led_ly, month_led, months
 
     return {
         "chat": chat,
-        "meta": {"company": args.company, "synced_at": now.isoformat(timespec="seconds"), "today": str(today), "fy_start": str(fy_start(today)),
+        "meta": {"credit_terms": {"default_days": DEFAULT_CREDIT_DAYS, "govt_days": GOVT_CREDIT_DAYS}, "company": args.company, "synced_at": now.isoformat(timespec="seconds"), "today": str(today), "fy_start": str(fy_start(today)),
                  "od_limit": args.od_limit, "every": args.every},
         "hero": {"cash": round(cash), "bank": round(bank), "od": round(od), "to_collect": round(to_collect),
                  "overdue_90": round(recv_buckets["91-180"] + recv_buckets["180+"]), "to_pay": round(to_pay),
