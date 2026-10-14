@@ -16,7 +16,7 @@ import sys, threading, time, traceback, urllib.error, urllib.request, webbrowser
 from pathlib import Path
 from types import SimpleNamespace
 
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 APP = "Pulse Connect"
 UI_PORT = 47819
 SITE = "https://tms-pulse-blush.vercel.app"
@@ -844,6 +844,14 @@ def install_self():
     if not (WIN and FROZEN): return False
     me = Path(sys.executable).resolve()
     if me == INSTALLED_EXE.resolve(): return False
+    code = None
+    m = CODE_RE.search(me.stem.upper())
+    if m: code = m.group(1)
+    inst = load_cfg().get("installed_version")
+    if INSTALLED_EXE.exists() and inst and _ver(inst) > _ver(VERSION):
+        # an older download was opened again: never downgrade - just start the newer installed copy
+        launch([str(INSTALLED_EXE)] + (["--code=" + code] if code else []), cwd=str(HOME))
+        return True
     for i in range(12):
         try:
             shutil.copy2(me, INSTALLED_EXE); break
@@ -852,9 +860,6 @@ def install_self():
                 log("install copy failed (running from download):", e); return False
             time.sleep(0.5)
     set_startup(True)
-    code = None
-    m = CODE_RE.search(me.stem.upper())
-    if m: code = m.group(1)
     args = [str(INSTALLED_EXE)] + (["--code=" + code] if code else [])
     launch(args, cwd=str(HOME))
     return True
@@ -925,6 +930,8 @@ def main():
     engine.TIMEOUT = 300
 
     C = Connector()
+    if FROZEN and Path(sys.executable).resolve() == INSTALLED_EXE.resolve() and C.cfg.get("installed_version") != VERSION:
+        C.cfg["installed_version"] = VERSION; save_cfg(C.cfg)
     if a.code and not C.cfg.get("push_key"): sys.argv.append("--code=" + a.code)
     C.write_cloud_cfg()
     log("Pulse Connect", VERSION, "starting", "(background)" if a.background else "")
