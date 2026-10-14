@@ -16,7 +16,7 @@ import sys, threading, time, traceback, urllib.error, urllib.request, webbrowser
 from pathlib import Path
 from types import SimpleNamespace
 
-VERSION = "1.0.2"
+VERSION = "1.0.3"
 APP = "Pulse Connect"
 UI_PORT = 47819
 SITE = "https://tms-pulse-blush.vercel.app"
@@ -484,6 +484,47 @@ class Connector:
         except Exception as e:
             log("status push failed:", e)
 
+    # -- precise change tracking: which months were edited, added to or deleted from since last time
+    def month_signatures(self):
+        """{'YYYY-MM': 'count:maxAlterId'} for the 13 months we show - one light request (dates + change ids only)."""
+        today = dt.date.today()
+        start = dt.date(today.year - 1, today.month, 1)
+        T = engine.Tally(self.tally.get("host", "127.0.0.1"), self.tally["port"], self.cfg["company"])
+        root = T.collection("Voucher", "DATE, ALTERID", start, today, filt=True)
+        sig = {}
+        for v in root.iter("VOUCHER"):
+            d = engine.tdate(engine.txt(v, "DATE"))
+            if not d: continue
+            k = "{}-{:02d}".format(d.year, d.month)
+            n, mx = sig.get(k, (0, 0))
+            try: a = int(engine.txt(v, "ALTERID") or 0)
+            except ValueError: a = 0
+            sig[k] = (n + 1, max(mx, a))
+        return {k: "{}:{}".format(*v) for k, v in sig.items()}
+
+    def invalidate_changed(self):
+        """Drop cached months that changed in Tally (edits, new or deleted vouchers), so old months stay correct."""
+        f = HOME / "month_sig.json"
+        try: old = json.loads(f.read_text(encoding="utf-8")) if f.exists() else None
+        except Exception: old = None
+        try:
+            new = self.month_signatures()
+        except Exception as e:
+            log("month check failed:", e); return
+        if old and old.get("company") == self.cfg.get("company"):
+            changed = sorted(k for k in set(old["sig"]) | set(new) if old["sig"].get(k) != new.get(k))
+            if changed:
+                cache = engine.CACHE
+                first = changed[0].replace("-", "")
+                for p in cache.glob("*.json") if cache.exists() else []:
+                    n = p.stem
+                    if (n.startswith("vch_") and n[4:].replace("-", "") in [c.replace("-", "") for c in changed]) or \
+                       (n.startswith("led_") and n[4:].isdigit() and n[4:] >= first) or n.startswith("stock_"):
+                        try: p.unlink()
+                        except Exception: pass
+                log("changed months:", ", ".join(changed))
+        f.write_text(json.dumps({"company": self.cfg.get("company"), "sig": new}), encoding="utf-8")
+
     # -- syncing
     def do_sync(self, reason):
         cfg = self.cfg
@@ -496,6 +537,7 @@ class Connector:
                                od_limit=float(cfg.get("od_limit") or 0), every=60, open=False)
         buf = _Progress(self)
         t0 = time.time()
+        self.invalidate_changed()
         try:
             old = sys.stdout; sys.stdout = buf
             try:
