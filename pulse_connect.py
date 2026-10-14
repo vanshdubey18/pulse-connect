@@ -16,7 +16,7 @@ import sys, threading, time, traceback, urllib.error, urllib.request, webbrowser
 from pathlib import Path
 from types import SimpleNamespace
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 APP = "Pulse Connect"
 UI_PORT = 47819
 SITE = "https://tms-pulse-blush.vercel.app"
@@ -270,6 +270,43 @@ def probe_port(port, host="127.0.0.1", timeout=2.5):
         except Exception:
             return None
 
+def listening_ports(pids):
+    """Ports that Tally's own process is listening on (exact - no guessing)."""
+    if not (WIN and pids): return []
+    try:
+        kw = no_window(); kw.pop("stdout"); kw.pop("stderr")
+        out = subprocess.run(["netstat", "-ano", "-p", "TCP"], capture_output=True, text=True, timeout=20, **kw).stdout
+    except Exception: return []
+    ports = []
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) >= 5 and parts[3].upper() == "LISTENING" and parts[4].isdigit() and int(parts[4]) in pids:
+            try:
+                p = int(parts[1].rsplit(":", 1)[1])
+                if p not in ports and p not in SKIP_PORTS: ports.append(p)
+            except ValueError: pass
+    return ports
+
+VERSION_REQ = ("<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST><TYPE>Data</TYPE><ID>PulseInfo</ID></HEADER><BODY><DESC>"
+    "<STATICVARIABLES><SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT></STATICVARIABLES><TDL><TDLMESSAGE>"
+    "<REPORT NAME='PulseInfo'><FORMS>PulseInfo</FORMS></REPORT><FORM NAME='PulseInfo'><TOPPARTS>PulseInfo</TOPPARTS></FORM>"
+    "<PART NAME='PulseInfo'><TOPLINES>PulseInfo</TOPLINES><SCROLLED>Vertical</SCROLLED></PART>"
+    "<LINE NAME='PulseInfo'><LEFTFIELDS>PulseRel,PulsePath</LEFTFIELDS></LINE>"
+    "<FIELD NAME='PulseRel'><USE>Name Field</USE><SET>$$ProdInfo:ProdReleaseAsStr</SET><XMLTAG>PULSEREL</XMLTAG></FIELD>"
+    "<FIELD NAME='PulsePath'><USE>Name Field</USE><SET>$$SysInfo:ApplicationPath</SET><XMLTAG>PULSEPATH</XMLTAG></FIELD>"
+    "</TDLMESSAGE></TDL></DESC></BODY></ENVELOPE>")
+def tally_release(host, port):
+    """Exact Tally release (e.g. 'TallyPrime 5.1' / 'Tally.ERP 9 6.6.3') and where it runs from. Best effort."""
+    try:
+        req = urllib.request.Request("http://{}:{}".format(host, port), data=VERSION_REQ.encode("utf-8"), method="POST",
+                                     headers={"Content-Type": "text/xml; charset=utf-8"})
+        with urllib.request.urlopen(req, timeout=8) as r:
+            t = engine._clean_xml(engine._decode(r.read()))
+        rel = re.search(r"<PULSEREL>(.*?)</PULSEREL>", t, re.S); path = re.search(r"<PULSEPATH>(.*?)</PULSEPATH>", t, re.S)
+        return ((rel.group(1).strip() if rel else None) or None, (path.group(1).strip() if path else None) or None)
+    except Exception:
+        return (None, None)
+
 def ini_port(ini):
     try:
         for line in Path(ini).read_text(encoding="utf-8", errors="ignore").splitlines():
@@ -278,6 +315,7 @@ def ini_port(ini):
     except Exception: pass
     return None
 
+_REL = {}
 def detect(cfg):
     """Look at the computer and say where Tally is and whether we can talk to it."""
     host = cfg.get("host") or "127.0.0.1"
@@ -291,7 +329,7 @@ def detect(cfg):
     ini = None
     for d in ([Path(exe).parent] if exe else []) + [p.parent for p in installs]:
         if (d / "tally.ini").exists(): ini = d / "tally.ini"; break
-    ports = []
+    ports = listening_ports(set(tally_pids))
     for p in (cfg.get("port"), ini_port(ini) if ini else None, 9000, 9001, 9002, 9003, 9004, 9005, 9008, 9010, 9050, 9090, 9100):
         if p and p not in ports and p not in SKIP_PORTS: ports.append(p)
     extra = os.environ.get("PULSE_TALLY_PORTS")   # testing / unusual setups
@@ -304,7 +342,15 @@ def detect(cfg):
     if found:
         product = "Tally.ERP 9" if "erp" in found[1].lower() else ("TallyPrime" if "prime" in found[1].lower() else None)
     product = product or product_from_path(exe) or (product_from_path(installs[0]) if installs else None)
-    return {"running": bool(tally_pids) or bool(found), "pids": tally_pids, "exe": exe, "installs": [str(i) for i in installs[:5]],
+    release = None
+    if found:
+        key = (host, found[0])
+        if _REL.get("key") != key or time.time() - _REL.get("t", 0) > 3600:
+            _REL.update({"key": key, "t": time.time(), "v": tally_release(host, found[0])})
+        release, rpath = _REL["v"]
+        if release:
+            product = ("Tally.ERP 9" if "erp" in release.lower() or release.strip().startswith(("6", "5", "4")) else "TallyPrime") if not product else product
+    return {"release": release, "running": bool(tally_pids) or bool(found), "pids": tally_pids, "exe": exe, "installs": [str(i) for i in installs[:5]],
             "ini": str(ini) if ini else None, "port": found[0] if found else None, "banner": found[1] if found else None,
             "product": product, "vcc": vcc_info(), "host": host}
 
@@ -426,7 +472,7 @@ class Connector:
     def push_status(self, state, msg, force=False, **extra):
         if not self.cfg.get("push_key"): return
         if not force and time.time() - self.last_status_push < 240 and state == self.state.get("_pushed"): return
-        body = {"state": state, "msg": msg, "company": self.cfg.get("company"), "product": self.tally.get("product"),
+        body = {"state": state, "msg": msg, "company": self.cfg.get("company"), "product": self.tally.get("product"), "release": self.tally.get("release"),
                 "machine": machine_name(), "app": VERSION, "last_sync": self.last_sync}
         body.update(extra)
         try:
@@ -456,7 +502,7 @@ class Connector:
                 data = engine.sync(args)
             finally:
                 sys.stdout = old
-            data["meta"]["product"] = self.tally.get("product")
+            data["meta"]["product"] = self.tally.get("release") or self.tally.get("product")
             data["meta"]["connector"] = VERSION
             self.set("syncing", "Uploading to your dashboard…", "")
             engine.cloud_push(data)
