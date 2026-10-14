@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pulse Connect</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f766e'/%3E%3Cpath d='M10 34h12l5-12 9 24 6-16 3 4h9' fill='none' stroke='white' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f5;--card:#fff;--ink:#14201c;--mut:#5d6b66;--line:#e3e8e5;--acc:#0f766e;--acc2:#e7f3f1;--good:#15803d;--warn:#b45309;--bad:#b91c1c;--r:18px}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1412;--card:#161e1b;--ink:#e8efec;--mut:#9aaba5;--line:#26322e;--acc:#2dd4bf;--acc2:#12302b;--good:#4ade80;--warn:#fbbf24;--bad:#f87171}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding:28px 16px 40px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.logo{width:40px;height:40px;border-radius:12px;background:var(--acc);display:grid;place-items:center}
+.logo svg{width:26px;height:26px}
+.top b{font-size:18px;letter-spacing:-.01em}.top small{display:block;color:var(--mut);font-size:13px}
+.rail{display:flex;gap:6px;margin-bottom:18px}
+.rail div{flex:1;height:6px;border-radius:9px;background:var(--line);transition:.4s}
+.rail div.on{background:var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:28px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+h1{font-size:26px;line-height:1.2;margin:0 0 8px;letter-spacing:-.02em}
+p{margin:0 0 14px;color:var(--mut)}
+.big{display:flex;gap:16px;align-items:flex-start}
+.badge{flex:none;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--acc2);color:var(--acc)}
+.badge svg{width:28px;height:28px}
+.badge.good{background:#dcfce7;color:#15803d}.badge.warn{background:#fef3c7;color:#b45309}
+@media (prefers-color-scheme:dark){.badge.good{background:#0f2e1c;color:#4ade80}.badge.warn{background:#33270d;color:#fbbf24}}
+button,.btn{font:inherit;font-weight:600;border:0;border-radius:12px;padding:12px 20px;cursor:pointer;background:var(--acc);color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+@media (prefers-color-scheme:dark){button,.btn{color:#04201c}}
+button.ghost{background:transparent;color:var(--acc);border:1px solid var(--line)}
+button:disabled{opacity:.55;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+input.code{font:600 26px/1 ui-monospace,Consolas,monospace;letter-spacing:.3em;text-transform:uppercase;width:100%;max-width:330px;padding:14px 16px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);outline:none}
+input.code:focus{border-color:var(--acc)}
+.err{color:var(--bad);font-size:14px;margin-top:10px;min-height:20px}
+.steps{counter-reset:s;list-style:none;padding:0;margin:16px 0 0}
+.steps li{counter-increment:s;position:relative;padding:10px 0 10px 44px;border-top:1px solid var(--line)}
+.steps li:first-child{border-top:0}
+.steps li:before{content:counter(s);position:absolute;left:0;top:9px;width:28px;height:28px;border-radius:50%;background:var(--acc2);color:var(--acc);font-weight:700;display:grid;place-items:center;font-size:14px}
+kbd{font:600 13px ui-monospace,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 7px;color:var(--ink)}
+.tabs{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;margin-top:6px}
+.tabs button{background:transparent;color:var(--mut);padding:7px 14px;border-radius:9px;font-size:14px}
+.tabs button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+@media (max-width:640px){.split{grid-template-columns:1fr}}
+.box{border:1px solid var(--line);border-radius:14px;padding:18px}
+.box h3{margin:0 0 6px;font-size:16px}
+.note{font-size:14px;color:var(--mut)}
+.fixmsg{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--acc2);font-size:14px}
+.prog{list-style:none;padding:0;margin:18px 0 0}
+.prog li{display:flex;align-items:center;gap:10px;padding:7px 0;color:var(--mut)}
+.prog li.done{color:var(--ink)}
+.prog i{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center}
+.prog li.done i{background:var(--acc);border-color:var(--acc)}
+.prog li.done i:after{content:"";width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.prog li.now i{border-color:var(--acc);border-top-color:transparent;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:20px}
+.facts div{background:var(--bg);border-radius:12px;padding:12px 14px}
+.facts small{display:block;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.facts b{font-size:15px;word-break:break-word}
+.pick{display:grid;gap:10px;margin-top:16px}
+.pick button{justify-content:space-between;background:var(--bg);color:var(--ink);border:1px solid var(--line);text-align:left}
+.pick button:hover{border-color:var(--acc)}
+.wait{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:14px;margin-top:16px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--acc);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25;transform:scale(.7)}}
+.foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:16px;color:var(--mut);font-size:13px}
+.foot a{color:var(--mut)}
+.lang{background:none;color:var(--mut);border:1px solid var(--line);padding:5px 10px;font-size:13px;margin-left:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="logo"><svg viewBox="0 0 64 64"><path d="M6 34h14l5-12 9 24 6-16 3 4h15" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div><b>Pulse Connect</b><small id="sub">Links your Tally to your Business Pulse dashboard</small></div>
+    <button class="lang" id="lang">हिंदी</button>
+  </div>
+  <div class="rail"><div id="r1"></div><div id="r2"></div><div id="r3"></div><div id="r4"></div></div>
+  <div class="card" id="main"><div class="wait"><span class="dot"></span><span>Starting…</span></div></div>
+  <div class="foot"><span id="foot"></span><span><a href="#" id="unpair" style="display:none">Disconnect this computer</a></span></div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+let S={}, lang='en', tabPick=null, typing=false;
+try{lang=localStorage.getItem('pc-lang')||'en'}catch(e){}
+const T={
+ en:{pair:'Enter your setup code',pairP:'It\'s on the setup page that was sent to you — 8 letters and numbers, like K7M2QX9P.',connect:'Connect',
+  openT:'Open Tally',openTP:'Open Tally and your company. We\'ll take it from there — nothing else to do.',openBtn:'Open Tally for me',waitT:'Waiting for Tally…',
+  portT:'One setting to switch on in Tally',portP:'Tally is open, but it isn\'t sharing data with other apps yet. This is a one-time switch.',
+  doIt:'Do it for me',doItP:'Tally will close and open again. Save your work first. Takes about a minute.',self:'Or do it yourself (1 minute)',
+  remoteT:'Connect to your Tally cloud',remoteP:'Your Tally runs on a cloud computer (Virtual Computer Connection). Pulse reads it through that connection.',
+  coT:'Which company should we show?',coP:'Pick the one the owner wants on the dashboard. You can change it later.',
+  syncT:'Reading your books',syncP:'Read-only — nothing in Tally is changed. The first time takes a few minutes; keep Tally open.',
+  liveT:'You\'re connected',liveP:'The dashboard updates by itself whenever something changes in Tally. You can close this window — Pulse runs quietly and starts with Windows.',
+  syncNow:'Sync now',change:'Change company',errT:'Couldn\'t read the books',retry:'Try again',noCoT:'Open your company in Tally',
+  last:'Last update',company:'Company',tally:'Tally',computer:'Computer'},
+ hi:{pair:'सेटअप कोड डालें',pairP:'यह उस सेटअप पेज पर है जो आपको भेजा गया था — 8 अक्षर/नंबर, जैसे K7M2QX9P.',connect:'कनेक्ट करें',
+  openT:'Tally खोलें',openTP:'Tally और अपनी कंपनी खोलें। बाकी हम कर लेंगे।',openBtn:'Tally खोलो',waitT:'Tally का इंतज़ार…',
+  portT:'Tally में एक सेटिंग चालू करनी है',portP:'Tally खुला है, पर अभी दूसरे ऐप्स से डेटा शेयर नहीं कर रहा। यह सिर्फ एक बार करना है।',
+  doIt:'मेरे लिए कर दो',doItP:'Tally बंद होकर फिर से खुलेगा। पहले अपना काम सेव करें। लगभग 1 मिनट।',self:'या खुद करें (1 मिनट)',
+  remoteT:'अपने Tally क्लाउड से जुड़ें',remoteP:'आपका Tally क्लाउड कंप्यूटर पर चलता है (Virtual Computer Connection)। Pulse उसी कनेक्शन से पढ़ता है।',
+  coT:'कौन सी कंपनी दिखानी है?',coP:'जो मालिक डैशबोर्ड पर देखना चाहते हैं वो चुनें। बाद में बदल सकते हैं।',
+  syncT:'आपकी बुक्स पढ़ रहे हैं',syncP:'सिर्फ पढ़ना — Tally में कुछ नहीं बदलता। पहली बार कुछ मिनट लगते हैं; Tally खुला रखें।',
+  liveT:'आप जुड़ गए हैं',liveP:'Tally में कुछ भी बदलेगा तो डैशबोर्ड अपने आप अपडेट होगा। यह विंडो बंद कर सकते हैं — Pulse चुपचाप चलता है और Windows के साथ शुरू होता है।',
+  syncNow:'अभी सिंक करें',change:'कंपनी बदलें',errT:'बुक्स नहीं पढ़ पाए',retry:'फिर कोशिश करें',noCoT:'Tally में अपनी कंपनी खोलें',
+  last:'आखिरी अपडेट',company:'कंपनी',tally:'Tally',computer:'कंप्यूटर'}};
+const t=k=>(T[lang]||T.en)[k]||T.en[k];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const title=s=>String(s||'').replace(/\b\w+/g,w=>w[0]+w.slice(1).toLowerCase());
+async function post(u,b){const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json','X-Pulse':'1'},body:JSON.stringify(b||{})});return r.json().catch(()=>({}));}
+const act=d=>post('/api/action',{do:d}).then(()=>setTimeout(load,400));
+const I={
+ link:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>',
+ tally:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+ gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+ cloud:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.5 19H7a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 11 4 4 0 0 1 17.5 19z"/></svg>',
+ check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+ book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>',
+ warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>'};
+function head(icon,h,p,cls){return `<div class="big"><div class="badge ${cls||''}">${I[icon]}</div><div><h1>${esc(h)}</h1><p>${p}</p></div></div>`;}
+const waiting=m=>`<div class="wait"><span class="dot"></span><span>${esc(m)}</span></div>`;
+
+function manual(prod){
+  const erp=(tabPick||(/ERP/.test(prod||'')?'erp':'prime'))==='erp';
+  const steps=erp?[
+    'In Tally.ERP 9, press <kbd>F12</kbd> (Configure) from the Gateway of Tally.',
+    'Choose <b>Advanced Configuration</b>.',
+    'Set <b>Tally.ERP 9 is acting as</b> to <b>Both</b>, <b>Enable ODBC Server</b> to <b>Yes</b>, and <b>Port</b> to <b>9000</b>.',
+    'Press <kbd>Ctrl</kbd>+<kbd>A</kbd> to save, then close and reopen Tally.']:[
+    'In TallyPrime, press <kbd>F1</kbd> (Help) and choose <b>Settings</b> → <b>Connectivity</b>.',
+    'Open <b>Client/Server configuration</b>.',
+    'Set <b>TallyPrime acts as</b> to <b>Both</b>, <b>Enable ODBC</b> to <b>Yes</b>, and <b>Port</b> to <b>9000</b>.',
+    'Press <kbd>Ctrl</kbd>+<kbd>A</kbd> to save, then close and reopen TallyPrime.<br><span class="note">Older TallyPrime (1.x)? It\'s under <kbd>F12</kbd> Configure → Advanced Configuration.</span>'];
+  return `<div class="tabs"><button data-tab="prime" class="${erp?'':'on'}">TallyPrime</button><button data-tab="erp" class="${erp?'on':''}">Tally.ERP 9</button></div>
+   <ol class="steps">${steps.map(s=>`<li>${s}</li>`).join('')}</ol><p class="note" style="margin-top:8px">We notice the moment it's on — no need to come back here.</p>`;
+}
+
+function render(){
+  const s=S, m=$('#main'), step=s.step;
+  const lvl={pair:1,pairing:1,open_tally:2,port_off:2,remote:2,no_company:2,company_closed:2,company:3,syncing:3,error:3,live:4}[step]||1;
+  for(let i=1;i<=4;i++) $('#r'+i).className=i<=lvl?'on':'';
+  $('#sub').textContent=s.business?('Connected to '+s.business):'Links your Tally to your Business Pulse dashboard';
+  $('#foot').textContent=[s.machine,'v'+(s.version||'')].filter(Boolean).join(' · ');
+  $('#unpair').style.display=s.paired?'':'none';
+  $('#lang').textContent=lang==='hi'?'English':'हिंदी';
+  if(typing&&step==='pair') return;
+  let h='';
+  if(step==='pair'||step==='pairing'){
+    h=head('link',t('pair'),t('pairP'))+`<form id="pf" class="row" autocomplete="off"><input class="code" id="code" maxlength="14" placeholder="K7M2QX9P" spellcheck="false" autofocus>
+      <button id="go">${t('connect')}</button></form><div class="err" id="perr"></div>`;
+  } else if(step==='open_tally'){
+    const can=(s.tally.installs||[]).length||s.tally.exe;
+    h=head('tally',t('openT'),t('openTP'))+(can?`<div class="row"><button onclick="act('open_tally')">${t('openBtn')}</button></div>`:'')+waiting(t('waitT'));
+  } else if(step==='port_off'){
+    const f=s.fix;
+    h=head('gear',t('portT'),t('portP'),'warn')+`<div class="split"><div class="box"><h3>${t('doIt')}</h3><p class="note">${t('doItP')}</p>
+      ${f&&f.phase&&f.phase!=='failed'&&f.phase!=='done'?`<div class="fixmsg">${esc(f.msg)}</div><div class="row"><button class="ghost" onclick="act('cancel_fix')">Cancel</button></div>`:
+        `<button onclick="act('fix_port')">${t('doIt')}</button>${f&&f.msg?`<div class="fixmsg">${esc(f.msg)}</div>`:''}`}
+      </div><div class="box"><h3>${t('self')}</h3>${manual(s.tally.product)}</div></div>`;
+  } else if(step==='remote'){
+    const v=(s.tally||{}).vcc||{};
+    h=head('cloud',t('remoteT'),t('remoteP'))+`<ol class="steps">
+      <li>Open <b>Virtual Computer Connection</b> on this computer and sign in.</li>
+      <li>Click <b>Connect</b>, then open Tally and your company on the cloud computer.</li>
+      <li>In Virtual Computer Connection, make sure <b>Sync with local applications</b> is on (green).</li></ol>
+      ${v.lock?`<div class="fixmsg">Seeing <b>"already established through another session"</b>? That's a known glitch in the VCC app.<div class="row" style="margin-top:10px;align-items:center"><button onclick="act('fix_vcc')">Fix it</button><span class="note">Windows will ask permission — click Yes, then connect VCC again.</span></div></div>`:''}
+      <p class="note" style="margin-top:14px">Using Tally on a remote desktop instead? Open your setup link inside that remote computer and install Pulse there.</p>`+waiting(t('waitT'));
+  } else if(step==='no_company'||step==='company_closed'){
+    h=head('book',step==='company_closed'?s.title:t('noCoT'),esc(s.detail))+waiting(t('waitT'))+(step==='company_closed'?`<div class="row"><button class="ghost" onclick="act('change_company')">${t('change')}</button></div>`:'');
+  } else if(step==='company'){
+    h=head('book',t('coT'),t('coP'))+`<div class="pick">${(s.companies||[]).map(c=>`<button data-co="${esc(c)}"><span>${esc(title(c))}</span><span>→</span></button>`).join('')}</div>`;
+  } else if(step==='syncing'){
+    const all=['Account groups','Ledgers & balances','Stock items','Bills to collect & pay','Vouchers (13 months)','Customer & supplier contacts','Post-dated cheques','Building your dashboard'];
+    const done=s.progress||[]; const now=all.find(x=>!done.includes(x));
+    h=head('book',t('syncT'),t('syncP'))+`<ul class="prog">${all.map(x=>`<li class="${done.includes(x)?'done':x===now?'now':''}"><i></i>${esc(x)}</li>`).join('')}</ul>`;
+  } else if(step==='live'){
+    h=head('check',t('liveT'),t('liveP'),'good')+`<div class="facts"><div><small>${t('company')}</small><b>${esc(title(s.company))}</b></div>
+      <div><small>${t('tally')}</small><b>${esc(s.tally.product||'Tally')}${s.tally.vcc&&!s.tally.pids?.length?' (cloud)':''}</b></div>
+      <div><small>${t('last')}</small><b>${esc(s.last_sync_ago||'—')}</b></div></div>
+      <div class="row"><button onclick="act('sync_now')">${t('syncNow')}</button>${(s.companies||[]).length>1?`<button class="ghost" onclick="act('change_company')">${t('change')}</button>`:''}</div>`;
+  } else if(step==='error'){
+    h=head('warn',t('errT'),esc(s.detail),'warn')+`<div class="row"><button onclick="act('sync_now')">${t('retry')}</button></div>`;
+  } else h=waiting(s.title||'Starting…');
+  m.innerHTML=h;
+  m.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tabPick=b.dataset.tab;render();});
+  m.querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>post('/api/company',{name:b.dataset.co}).then(load));
+  const pf=$('#pf');
+  if(pf){const inp=$('#code');
+    inp.oninput=()=>{typing=inp.value.length>0;};
+    pf.onsubmit=async e=>{e.preventDefault();$('#go').disabled=true;$('#perr').textContent='';
+      const r=await post('/api/pair',{code:inp.value}); $('#go').disabled=false;
+      if(r.ok){typing=false;load();} else $('#perr').textContent=r.error||'Something went wrong.';};
+    inp.focus();}
+}
+let prevS='';
+async function load(){try{const r=await fetch('/api/state',{cache:'no-store'});const txt=await r.text();if(txt===prevS)return;prevS=txt;S=JSON.parse(txt);render();}catch(e){$('#main').innerHTML=waiting('Pulse Connect is not running. Open it again from your Downloads.');}}
+$('#lang').onclick=()=>{typing=false;lang=lang==='hi'?'en':'hi';try{localStorage.setItem('pc-lang',lang)}catch(e){};render();};
+$('#unpair').onclick=e=>{e.preventDefault();if(confirm('Disconnect this computer from '+(S.business||'Pulse')+'? The dashboard stops updating until you connect again.'))act('unpair');};
+load(); setInterval(load,1500);
+</script>
+</body>
+</html>

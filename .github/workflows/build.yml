@@ -1,0 +1,38 @@
+name: build
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build
+        shell: cmd
+        run: |
+          python -m pip install --upgrade pip pyinstaller==6.11.1
+          python make_generic.py dashboard_template.html pulse_template.html
+          pyinstaller --noconfirm --onefile --windowed --name PulseConnect --icon pulse.ico --version-file version_info.txt ^
+            --add-data "ui.html;." --add-data "pulse_template.html;." --hidden-import engine --noupx pulse_connect.py
+      - name: Self-test (packaged app starts and serves its UI)
+        shell: pwsh
+        run: |
+          $env:PULSE_HOME = "$env:RUNNER_TEMP\pulsehome"
+          $p = Start-Process -FilePath dist\PulseConnect.exe -ArgumentList "--background","--no-browser" -PassThru
+          Start-Sleep -Seconds 12
+          $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:47819/api/state
+          Write-Output $r.Content
+          if ($r.Content -notmatch '"step"') { exit 1 }
+          Stop-Process -Id $p.Id -Force
+          Get-Content "$env:PULSE_HOME\log.txt"
+      - name: Checksum
+        shell: pwsh
+        run: (Get-FileHash dist\PulseConnect.exe -Algorithm SHA256).Hash.ToLower() | Out-File -Encoding ascii dist\PulseConnect.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PulseConnect
+          path: dist/PulseConnect.*
