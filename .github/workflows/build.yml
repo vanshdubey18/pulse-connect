@@ -8,6 +8,7 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -59,14 +60,17 @@ jobs:
       - name: Installer self-test (silent install, app runs, uninstall)
         shell: pwsh
         run: |
-          Start-Process out\PulseConnectSetup.exe -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait
+          $p = Start-Process out\PulseConnectSetup.exe -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -PassThru
+          $p.WaitForExit()
           $exe = "$env:LOCALAPPDATA\Programs\PulseConnect\PulseConnect.exe"
           if (-not (Test-Path $exe)) { Write-Error "not installed"; exit 1 }
           Start-Sleep -Seconds 12
           $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:47819/hello
           Write-Output $r.Content
           if ($r.Content -notmatch 'pulse-connect') { exit 1 }
-          Start-Process "$env:LOCALAPPDATA\Programs\PulseConnect\unins000.exe" -ArgumentList "/VERYSILENT" -Wait
+          $u = Start-Process "$env:LOCALAPPDATA\Programs\PulseConnect\unins000.exe" -ArgumentList "/VERYSILENT" -PassThru
+          $u.WaitForExit(); Start-Sleep -Seconds 5
+          if (Test-Path $exe) { Write-Output "::warning::uninstall left the program in place" }
       - uses: actions/upload-artifact@v4
         with:
           name: PulseConnectSetup
