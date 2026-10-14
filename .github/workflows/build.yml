@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   windows:
     runs-on: windows-latest
@@ -36,3 +38,18 @@ jobs:
         with:
           name: PulseConnect
           path: dist/PulseConnect.*
+      - name: Publish release (download link used by the setup page)
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = (Select-String -Path pulse_connect.py -Pattern '^VERSION = "(.+)"').Matches[0].Groups[1].Value
+          $sha = (Get-Content dist\PulseConnect.sha256).Trim()
+          $tag = "v$v"
+          gh release view $tag 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag dist\PulseConnect.exe --title "Pulse Connect $v" --notes "sha256: $sha" --latest
+          } else {
+            gh release upload $tag dist\PulseConnect.exe --clobber
+            gh release edit $tag --notes "sha256: $sha" --latest
+          }
