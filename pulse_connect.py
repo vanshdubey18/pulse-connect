@@ -16,7 +16,7 @@ import sys, threading, time, traceback, urllib.error, urllib.request, webbrowser
 from pathlib import Path
 from types import SimpleNamespace
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 APP = "Pulse Connect"
 UI_PORT = 47819
 SITE = "https://tms-pulse-blush.vercel.app"
@@ -260,9 +260,13 @@ def probe_port(port, host="127.0.0.1", timeout=2.5):
         return None
     except Exception:
         # Some builds answer GET slowly / oddly: confirm with a tiny XML request instead.
+        # (a cloud/VCC tunnel can accept the connection and then never answer - keep this short)
         try:
-            engine.Tally(host, port, None).post("<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST><TYPE>Function</TYPE><ID>$$SysInfo:Version</ID></HEADER><BODY><DESC></DESC></BODY></ENVELOPE>")
-            return "Tally"
+            req = urllib.request.Request("http://{}:{}".format(host, port), method="POST", headers={"Content-Type": "text/xml"},
+                data=b"<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST><TYPE>Function</TYPE><ID>$$SysInfo:Version</ID></HEADER><BODY><DESC></DESC></BODY></ENVELOPE>")
+            with urllib.request.urlopen(req, timeout=5) as r:
+                body = r.read(2000).decode("utf-8", "ignore")
+            return "Tally" if "<ENVELOPE" in body.upper() or "RESPONSE" in body.upper() else None
         except Exception:
             return None
 
@@ -709,6 +713,9 @@ class UI(http.server.BaseHTTPRequestHandler):
             elif a == "change_company":
                 with C.lock: C.cfg.pop("company", None); save_cfg(C.cfg)
             elif a == "unpair": C.unpair()
+            elif a == "quit":
+                self._send(200, {"ok": True}); log("quit requested (newer copy starting)")
+                threading.Timer(0.5, lambda: os._exit(0)).start(); return
             elif a == "retry": C.cfg.pop("asked_code", None)
             C.wake.set(); return self._send(200, {"ok": True})
         return self._send(404, {"error": "not found"})
@@ -720,12 +727,28 @@ class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
 def open_ui():
     webbrowser.open("http://127.0.0.1:%d/" % UI_PORT)
 
+def _ver(v):
+    try: return tuple(int(x) for x in str(v).split("."))
+    except Exception: return (0,)
+
 def already_running():
+    """True if a copy is already running. An older copy is asked to step aside for this newer one."""
     try:
         with urllib.request.urlopen("http://127.0.0.1:%d/hello" % UI_PORT, timeout=2) as r:
-            return json.loads(r.read()).get("app") == "pulse-connect"
+            h = json.loads(r.read())
     except Exception:
         return False
+    if h.get("app") != "pulse-connect": return False
+    if _ver(h.get("version")) < _ver(VERSION):
+        try:
+            urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:%d/api/action" % UI_PORT, data=b'{"do":"quit"}', method="POST",
+                                   headers={"X-Pulse": "1", "Content-Type": "application/json"}), timeout=5).close()
+        except Exception: pass
+        for _ in range(20):
+            time.sleep(0.5)
+            try: urllib.request.urlopen("http://127.0.0.1:%d/hello" % UI_PORT, timeout=1).close()
+            except Exception: return False
+    return True
 
 # ------------------------------------------------------------------ install / update
 def install_self():
@@ -733,10 +756,13 @@ def install_self():
     if not (WIN and FROZEN): return False
     me = Path(sys.executable).resolve()
     if me == INSTALLED_EXE.resolve(): return False
-    try:
-        shutil.copy2(me, INSTALLED_EXE)
-    except Exception as e:
-        log("install copy failed (running from download):", e); return False
+    for i in range(12):
+        try:
+            shutil.copy2(me, INSTALLED_EXE); break
+        except Exception as e:
+            if i == 11:
+                log("install copy failed (running from download):", e); return False
+            time.sleep(0.5)
     set_startup(True)
     code = None
     m = CODE_RE.search(me.stem.upper())
