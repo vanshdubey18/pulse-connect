@@ -42,10 +42,13 @@ Type: files; Name: "{localappdata}\PulseConnect\PulseConnect.exe"
 Name: "{userprograms}\Pulse Connect"; Filename: "{app}\PulseConnect.exe"
 
 [Run]
+; keep-alive: if Pulse Connect ever stops (or an antivirus closes it), start it again within 30 minutes
+Filename: "{sys}\schtasks.exe"; Parameters: "/Create /F /SC MINUTE /MO 30 /TN ""Pulse Connect keep-alive"" /TR ""\""{app}\PulseConnect.exe\"" --background"""; Flags: runhidden
 Filename: "{app}\PulseConnect.exe"; Parameters: "{code:CodeParam}"; Flags: nowait postinstall; Description: "Open Pulse Connect"; Check: not WizardSilent
 Filename: "{app}\PulseConnect.exe"; Parameters: "--background"; Flags: nowait; Check: WizardSilent
 
 [UninstallRun]
+Filename: "{sys}\schtasks.exe"; Parameters: "/Delete /F /TN ""Pulse Connect keep-alive"""; Flags: runhidden; RunOnceId: "PulseKeepAlive"
 Filename: "{app}\PulseConnect.exe"; Parameters: "--uninstall"; Flags: waituntilterminated; RunOnceId: "PulseUninstall"
 
 [Code]

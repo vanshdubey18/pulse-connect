@@ -16,7 +16,7 @@ import sys, threading, time, traceback, urllib.error, urllib.request, webbrowser
 from pathlib import Path
 from types import SimpleNamespace
 
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 APP = "Pulse Connect"
 UI_PORT = 47819
 SITE = "https://tms-pulse-blush.vercel.app"
@@ -386,6 +386,15 @@ def ini_restore(ini):
     if bak.exists(): shutil.copy2(bak, ini); return True
     return False
 
+def run_with_deadline(fn, seconds):
+    """Run fn in a helper thread. Returns (finished, result, error, thread)."""
+    box = {}
+    def go():
+        try: box["r"] = fn()
+        except Exception as e: box["e"] = e; box["tb"] = traceback.format_exc()[-1500:]
+    t = threading.Thread(target=go, daemon=True); t.start(); t.join(seconds)
+    return (not t.is_alive(), box.get("r"), box.get("e"), t)
+
 # ------------------------------------------------------------------ the worker
 class Connector:
     def __init__(self):
@@ -445,8 +454,13 @@ class Connector:
             return {"ok": False, "error": "We couldn't find that code. Please check it on the setup page."}
         try:
             res = rpc("claim_setup", {"p_code": code, "p_machine": machine_name()})
-        except Exception as e:
-            return {"ok": False, "error": "Couldn't connect just now ({}). Try again.".format(e)}
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                return {"ok": False, "error": "This setup code was already used on another computer. For safety each code works once. "
+                                              "Ask the owner for a new setup link (on their Pulse page: \"Set up on another computer\")."}
+            return {"ok": False, "error": "Couldn't connect just now. Try again in a minute."}
+        except Exception:
+            return {"ok": False, "error": "Couldn't connect just now. Check the internet and try again."}
         with self.lock:
             if self.cfg.get("code") != code:      # a different business: start fresh (first full upload)
                 for k in ("last_sync_ts", "last_alt", "settings"): self.cfg.pop(k, None)
@@ -564,14 +578,22 @@ class Connector:
                                od_limit=float(cfg.get("od_limit") or 0), every=60, open=False)
         buf = _Progress(self)
         t0 = time.time()
-        self.invalidate_changed()
+        log("sync start ({})".format(reason))
+        done, _, _, th = run_with_deadline(self.invalidate_changed, 150)
+        if not done:
+            log("change check is taking too long - Tally not answering"); self.stuck_thread = th
+            self.syncing = False; self.sync_error = "Tally isn't answering"; return False
         settings = self.load_settings()
         try:
             old = sys.stdout; sys.stdout = buf
             try:
-                data = engine.sync(args)
+                done, data, err, th = run_with_deadline(lambda: engine.sync(args), 1200 if first else 480)
             finally:
-                sys.stdout = old
+                if done: sys.stdout = old
+            if not done:
+                self.stuck_thread = th
+                raise TimeoutError("Tally isn't answering")
+            if err: raise err
             data["meta"]["product"] = " ".join(x for x in (self.tally.get("product"), self.tally.get("release")) if x) or "Tally"
             data["meta"]["connector"] = VERSION
             for k in ("brand", "about", "ask_label"):
@@ -599,6 +621,15 @@ class Connector:
     # -- the main loop: figure out what is needed next, do it, sleep
     def tick(self):
         cfg = self.cfg
+        th = getattr(self, "stuck_thread", None)
+        if th is not None:
+            if th.is_alive():   # an earlier read is still waiting on Tally - don't pile up more requests
+                self.set("error", "Tally isn't answering", "Tally may be showing a message box or busy with a report. Close any popup in Tally (press Esc) and it will continue by itself.")
+                self.push_status("error", "Tally isn't answering - a popup may be open in Tally")
+                return 20
+            self.stuck_thread = None; sys.stdout = sys.__stdout__
+        if getattr(self, "stuck", False):
+            self.stuck = False
         if not cfg.get("push_key"):
             code = self.find_code() if not cfg.get("asked_code") else None
             if code:
@@ -673,6 +704,7 @@ class Connector:
 
     def friendly_error(self, e):
         e = e or ""
+        if "isn't answering" in e: return "Tally isn't answering. If a message box is open in Tally, close it (press Esc). We'll keep trying."
         if "timed out" in e.lower(): return "Tally took too long to answer. If Tally is busy (printing, reports), we'll try again in a minute."
         if "connection" in e.lower() or "refused" in e.lower(): return "Tally stopped answering. Is it still open? We'll try again in a minute."
         if "tally error" in e.lower(): return "Tally said: " + e.split(":", 1)[-1].strip()[:160]
@@ -966,7 +998,7 @@ def main():
     engine.OUTPUT = HOME / "dashboard.html"; engine.DATA_OUT = HOME / "data.json"; engine.CLOUD_CFG = HOME / "cloud_config.txt"
     engine.WA_SENT = engine.CACHE / "whatsapp_sent.txt"; engine.TOKEN_FILE = engine.CACHE / "phone_key.txt"
     engine.GOVT_WORDS = Connector.GENERIC_GOVT
-    engine.TIMEOUT = 300
+    engine.TIMEOUT = 180
 
     C = Connector()
     if FROZEN and Path(sys.executable).resolve() == INSTALLED_EXE.resolve() and C.cfg.get("installed_version") != VERSION:
@@ -977,7 +1009,9 @@ def main():
     srv = Server(("127.0.0.1", UI_PORT), UI)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     if WIN and FROZEN: set_startup(True)
-    if not a.no_browser and (not a.background or not C.cfg.get("push_key")):
+    if not a.no_browser and (not a.background or (not C.cfg.get("push_key") and time.time() - C.cfg.get("ui_nag", 0) > 6 * 3600)):
+        if a.background:
+            C.cfg["ui_nag"] = time.time(); save_cfg(C.cfg)
         open_ui()
     def updater():
         while True:
