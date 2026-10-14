@@ -16,7 +16,7 @@ import sys, threading, time, traceback, urllib.error, urllib.request, webbrowser
 from pathlib import Path
 from types import SimpleNamespace
 
-VERSION = "1.0.5"
+VERSION = "1.1.0"
 APP = "Pulse Connect"
 UI_PORT = 47819
 SITE = "https://tms-pulse-blush.vercel.app"
@@ -25,13 +25,14 @@ SB_KEY = "sb_publishable_x63FxbxZkudEW5HHPx3j-g_eVGYIMAf"
 CODE_ALPHA = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 CODE_RE = re.compile(r"(?<![A-Z0-9])([%s]{8})(?![A-Z0-9])" % CODE_ALPHA)
 WIN = os.name == "nt"
-FROZEN = getattr(sys, "frozen", False)
+COMPILED = "__compiled__" in globals()          # built as a real Windows program and installed by PulseConnectSetup.exe
+FROZEN = getattr(sys, "frozen", False) or COMPILED
 RES = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 HOME = Path(os.environ.get("PULSE_HOME") or (Path(os.environ.get("LOCALAPPDATA", Path.home())) / "PulseConnect"))
 HOME.mkdir(parents=True, exist_ok=True)
 CFG = HOME / "config.json"
 LOG = HOME / "log.txt"
-INSTALLED_EXE = HOME / "PulseConnect.exe"
+INSTALLED_EXE = Path(sys.executable).resolve() if COMPILED else HOME / "PulseConnect.exe"
 CHECK_EVERY = int(os.environ.get("PULSE_CHECK") or 120)         # seconds between cheap "did anything change in Tally?" checks
 FULL_EVERY = 60 * 60       # full refresh at least this often even if nothing changed (keeps "today" figures right)
 SKIP_PORTS = {9999}        # Tally license server - never talk to it
@@ -866,7 +867,7 @@ def already_running():
 # ------------------------------------------------------------------ install / update
 def install_self():
     """Copy the downloaded program into the user's app folder and start it from there (no admin needed)."""
-    if not (WIN and FROZEN): return False
+    if not (WIN and FROZEN) or COMPILED: return False   # the installer already put us in place
     me = Path(sys.executable).resolve()
     if me == INSTALLED_EXE.resolve(): return False
     code = None
@@ -897,11 +898,17 @@ def check_update(c):
             info = json.loads(r.read())
         if tuple(int(x) for x in info["version"].split(".")) <= tuple(int(x) for x in VERSION.split(".")): return
         if c.syncing: return
-        new = HOME / "PulseConnect.new.exe"
-        with urllib.request.urlopen(info["url"], timeout=300) as r, open(new, "wb") as f: shutil.copyfileobj(r, f)
-        if hashlib.sha256(new.read_bytes()).hexdigest() != info["sha256"].lower():
+        url = info.get("setup_url") if COMPILED else info["url"]
+        want = (info.get("setup_sha256") if COMPILED else info.get("sha256")) or ""
+        if not url or not want: return
+        new = HOME / ("PulseConnectSetup.new.exe" if COMPILED else "PulseConnect.new.exe")
+        with urllib.request.urlopen(url, timeout=300) as r, open(new, "wb") as f: shutil.copyfileobj(r, f)
+        if hashlib.sha256(new.read_bytes()).hexdigest() != want.lower():
             new.unlink(); log("update checksum mismatch - ignored"); return
         log("updating to", info["version"])
+        if COMPILED:   # the installer closes us, replaces the files and starts the new version
+            subprocess.Popen([str(new), "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS"], close_fds=True, **no_window())
+            return
         cmd = 'ping -n 4 127.0.0.1 >nul & move /y "{n}" "{o}" & start "" "{o}" --background'.format(n=new, o=INSTALLED_EXE)
         subprocess.Popen(["cmd", "/c", cmd], close_fds=True, **no_window())
         os._exit(0)
@@ -929,6 +936,10 @@ def main():
     if a.restore_ini:
         ini_restore(a.restore_ini); return
     if a.uninstall:
+        try:   # stop the running copy first
+            urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:%d/api/action" % UI_PORT, data=b'{"do":"quit"}', method="POST",
+                                   headers={"X-Pulse": "1", "Content-Type": "application/json"}), timeout=5).close()
+        except Exception: pass
         set_startup(False)
         try: CFG.unlink()
         except Exception: pass

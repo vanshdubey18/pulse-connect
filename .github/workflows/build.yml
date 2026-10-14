@@ -13,43 +13,69 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Build
+      - name: Version
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path pulse_connect.py -Pattern '^VERSION = "(.+)"').Matches[0].Groups[1].Value
+          "PULSE_VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Compile (real Windows program, no self-unpacking)
         shell: cmd
         run: |
-          python -m pip install --upgrade pip pyinstaller==6.11.1
+          python -m pip install --upgrade pip nuitka==2.5.9 ordered-set zstandard
           python make_generic.py dashboard_template.html pulse_template.html
-          pyinstaller --noconfirm --onefile --windowed --name PulseConnect --icon pulse.ico --version-file version_info.txt ^
-            --add-data "ui.html;." --add-data "pulse_template.html;." --hidden-import engine --noupx pulse_connect.py
-      - name: Self-test (packaged app starts and serves its UI)
+          python -m nuitka --standalone --assume-yes-for-downloads --msvc=latest ^
+            --windows-console-mode=disable --windows-icon-from-ico=pulse.ico ^
+            --company-name="Maple Peak" --product-name="Pulse Connect" ^
+            --file-version=%PULSE_VERSION% --product-version=%PULSE_VERSION% ^
+            --file-description="Pulse Connect - links Tally to Business Pulse" ^
+            --copyright="Maple Peak" ^
+            --include-data-files=ui.html=ui.html --include-data-files=pulse_template.html=pulse_template.html ^
+            --output-filename=PulseConnect.exe --output-dir=dist pulse_connect.py
+      - name: Self-test (compiled app starts and serves its UI)
         shell: pwsh
         run: |
           $env:PULSE_HOME = "$env:RUNNER_TEMP\pulsehome"
-          $p = Start-Process -FilePath dist\PulseConnect.exe -ArgumentList "--background","--no-browser" -PassThru
+          $p = Start-Process -FilePath dist\pulse_connect.dist\PulseConnect.exe -ArgumentList "--background","--no-browser" -PassThru
           Start-Sleep -Seconds 12
           $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:47819/api/state
           Write-Output $r.Content
           if ($r.Content -notmatch '"step"') { exit 1 }
           Stop-Process -Id $p.Id -Force
           Get-Content "$env:PULSE_HOME\log.txt"
-      - name: Checksum
+      - name: Installer
         shell: pwsh
-        run: (Get-FileHash dist\PulseConnect.exe -Algorithm SHA256).Hash.ToLower() | Out-File -Encoding ascii dist\PulseConnect.sha256
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          & $iscc installer.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          (Get-FileHash out\PulseConnectSetup.exe -Algorithm SHA256).Hash.ToLower() | Out-File -Encoding ascii out\PulseConnectSetup.sha256
+      - name: Installer self-test (silent install, app runs, uninstall)
+        shell: pwsh
+        run: |
+          Start-Process out\PulseConnectSetup.exe -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait
+          $exe = "$env:LOCALAPPDATA\Programs\PulseConnect\PulseConnect.exe"
+          if (-not (Test-Path $exe)) { Write-Error "not installed"; exit 1 }
+          Start-Sleep -Seconds 12
+          $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:47819/hello
+          Write-Output $r.Content
+          if ($r.Content -notmatch 'pulse-connect') { exit 1 }
+          Start-Process "$env:LOCALAPPDATA\Programs\PulseConnect\unins000.exe" -ArgumentList "/VERYSILENT" -Wait
       - uses: actions/upload-artifact@v4
         with:
-          name: PulseConnect
-          path: dist/PulseConnect.*
-      - name: Publish release (download link used by the setup page)
+          name: PulseConnectSetup
+          path: out/PulseConnectSetup.*
+      - name: Publish release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $v = (Select-String -Path pulse_connect.py -Pattern '^VERSION = "(.+)"').Matches[0].Groups[1].Value
-          $sha = (Get-Content dist\PulseConnect.sha256).Trim()
-          $tag = "v$v"
+          $sha = (Get-Content out\PulseConnectSetup.sha256).Trim()
+          $tag = "v$env:PULSE_VERSION"
           gh release view $tag 2>$null
           if ($LASTEXITCODE -ne 0) {
-            gh release create $tag dist\PulseConnect.exe --title "Pulse Connect $v" --notes "sha256: $sha" --latest
+            gh release create $tag out\PulseConnectSetup.exe --title "Pulse Connect $env:PULSE_VERSION" --notes "setup sha256: $sha" --latest
           } else {
-            gh release upload $tag dist\PulseConnect.exe --clobber
-            gh release edit $tag --notes "sha256: $sha" --latest
+            gh release upload $tag out\PulseConnectSetup.exe --clobber
+            gh release edit $tag --notes "setup sha256: $sha" --latest
           }
