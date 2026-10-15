@@ -1,10 +1,7 @@
 name: e2e
 on:
-  workflow_dispatch:
-    inputs:
-      code:
-        description: setup code of a throwaway test business
-        required: true
+  push:
+    branches: [e2e-run]   # push tests/e2e_code.txt (setup code of a throwaway test business) to this branch
 jobs:
   fresh-windows-pc:
     runs-on: windows-latest
@@ -14,6 +11,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Read test code
+        shell: pwsh
+        run: |
+          $c = (Get-Content tests\e2e_code.txt).Trim()
+          "CODE=$c" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Fake Tally (TallyPrime-like XML server on port 9000)
         shell: pwsh
         run: |
@@ -23,7 +25,7 @@ jobs:
       - name: Download the public installer exactly like a customer
         shell: pwsh
         run: |
-          $f = "$env:USERPROFILE\Downloads\PulseConnectSetup-${{ inputs.code }}.exe"
+          $f = "$env:USERPROFILE\Downloads\PulseConnectSetup-$env:CODE.exe"
           Invoke-WebRequest -UseBasicParsing https://github.com/vanshdubey18/pulse-connect/releases/latest/download/PulseConnectSetup.exe -OutFile $f
           $p = Start-Process $f -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -PassThru; $p.WaitForExit()
           Test-Path "$env:LOCALAPPDATA\Programs\PulseConnect\PulseConnect.exe"
@@ -32,7 +34,7 @@ jobs:
         shell: pwsh
         run: |
           Start-Sleep 5
-          Start-Process "$env:LOCALAPPDATA\Programs\PulseConnect\PulseConnect.exe" -ArgumentList "--code=${{ inputs.code }}","--no-browser"
+          Start-Process "$env:LOCALAPPDATA\Programs\PulseConnect\PulseConnect.exe" -ArgumentList "--code=$env:CODE","--no-browser"
           $ok = $false
           for ($i = 0; $i -lt 60; $i++) {
             Start-Sleep 5
