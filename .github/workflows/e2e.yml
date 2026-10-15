@@ -34,12 +34,20 @@ jobs:
         shell: pwsh
         run: |
           Start-Sleep 5
-          Start-Process "$env:LOCALAPPDATA\Programs\PulseConnect\PulseConnect.exe" -ArgumentList "--code=$env:CODE","--no-browser"
+          if ($env:CODE -eq "SIGNUP") {
+            Start-Process "$env:LOCALAPPDATA\Programs\PulseConnect\PulseConnect.exe" -ArgumentList "--no-browser"
+            Start-Sleep 8
+            $r = Invoke-WebRequest -UseBasicParsing -Method Post -Uri http://127.0.0.1:47819/api/signup -ContentType "application/json" `
+                 -Headers @{ "X-Pulse" = "1" } -Body '{"name":"E2E signup test (automatic)","phone":"9876543210"}'
+            Write-Output $r.Content
+          } else {
+            Start-Process "$env:LOCALAPPDATA\Programs\PulseConnect\PulseConnect.exe" -ArgumentList "--code=$env:CODE","--no-browser"
+          }
           $ok = $false
           for ($i = 0; $i -lt 60; $i++) {
             Start-Sleep 5
             try { $s = (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:47819/api/state).Content | ConvertFrom-Json } catch { continue }
-            Write-Output ("{0}  {1}  {2}" -f $s.step, $s.title, $s.business)
+            Write-Output ("{0}  {1}  {2}  {3}" -f $s.step, $s.title, $s.business, [bool]$s.dashboard_url)
             if ($s.step -eq "live") { $ok = $true; break }
           }
           Get-Content "$env:LOCALAPPDATA\PulseConnect\log.txt" -Tail 30
