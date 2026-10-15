@@ -81,10 +81,10 @@ def respond(body):
             if v[8]: continue
             if rec and v[1] in ("Sales", "GST Sales") and (TODAY - v[0]).days < 200 and int(v[2]) % 3 == 0:
                 out += "<BILLFIXED><BILLDATE>{}</BILLDATE><BILLREF>INV/{}</BILLREF><BILLPARTY>{}</BILLPARTY></BILLFIXED><BILLCL>{}</BILLCL><BILLDUE>{}</BILLDUE><BILLOVERDUE>{}</BILLOVERDUE>".format(
-                    v[0].strftime("%-d-%b-%y"), v[2], e(v[3]), amt(v[4]), (v[0] + dt.timedelta(30)).strftime("%-d-%b-%y"), max(0, (TODAY - v[0]).days - 30))
+                    "{}-{}".format(v[0].day, v[0].strftime("%b-%y")), v[2], e(v[3]), amt(v[4]), "{}-{}".format((v[0] + dt.timedelta(30)).day, (v[0] + dt.timedelta(30)).strftime("%b-%y")), max(0, (TODAY - v[0]).days - 30))
             if not rec and v[1] == "Purchase" and (TODAY - v[0]).days < 120:
                 out += "<BILLFIXED><BILLDATE>{}</BILLDATE><BILLREF>P/{}</BILLREF><BILLPARTY>{}</BILLPARTY></BILLFIXED><BILLCL>{}</BILLCL><BILLDUE></BILLDUE><BILLOVERDUE>0</BILLOVERDUE>".format(
-                    v[0].strftime("%-d-%b-%y"), v[2], e(v[3]), amt(v[4]))
+                    "{}-{}".format(v[0].day, v[0].strftime("%b-%y")), v[2], e(v[3]), amt(v[4]))
         return out + "</ENVELOPE>"
     if not mt: return "<RESPONSE><LINEERROR>Unknown request</LINEERROR></RESPONSE>"
     typ = mt.group(1)
