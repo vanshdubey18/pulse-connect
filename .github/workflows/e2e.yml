@@ -49,5 +49,9 @@ jobs:
         run: |
           $u = Start-Process "$env:LOCALAPPDATA\Programs\PulseConnect\unins000.exe" -ArgumentList "/VERYSILENT" -PassThru; $u.WaitForExit()
           Start-Sleep 5
-          "installed after uninstall: " + (Test-Path "$env:LOCALAPPDATA\Programs\PulseConnect\PulseConnect.exe")
-          schtasks /Query /TN "Pulse Connect keep-alive" 2>$null; "keep-alive task left: " + ($LASTEXITCODE -eq 0)
+          $left = Test-Path "$env:LOCALAPPDATA\Programs\PulseConnect\PulseConnect.exe"
+          schtasks /Query /TN "Pulse Connect keep-alive" *> $null; $task = ($LASTEXITCODE -eq 0)
+          $run = (Get-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Run -ErrorAction SilentlyContinue).PulseConnect
+          Write-Output "::notice::uninstall - program left: $left, keep-alive task left: $task, startup entry left: $([bool]$run)"
+          if ($left -or $task -or $run) { exit 1 }
+          exit 0

@@ -48,6 +48,7 @@ Filename: "{app}\PulseConnect.exe"; Parameters: "{code:CodeParam}"; Flags: nowai
 Filename: "{app}\PulseConnect.exe"; Parameters: "--background"; Flags: nowait; Check: WizardSilent
 
 [UninstallRun]
+Filename: "{sys}\taskkill.exe"; Parameters: "/f /im PulseConnect.exe"; Flags: runhidden; RunOnceId: "PulseKill"
 Filename: "{sys}\schtasks.exe"; Parameters: "/Delete /F /TN ""Pulse Connect keep-alive"""; Flags: runhidden; RunOnceId: "PulseKeepAlive"
 Filename: "{app}\PulseConnect.exe"; Parameters: "--uninstall"; Flags: waituntilterminated; RunOnceId: "PulseUninstall"
 
