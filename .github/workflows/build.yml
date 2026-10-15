@@ -2,6 +2,7 @@ name: build
 on:
   push:
     branches: [main]
+    paths-ignore: ["tests/**", ".github/workflows/e2e.yml", "README.md"]
   workflow_dispatch:
 permissions:
   contents: write
@@ -86,6 +87,5 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             gh release create $tag out\PulseConnectSetup.exe --title "Pulse Connect $env:PULSE_VERSION" --notes "setup sha256: $sha" --latest
           } else {
-            gh release upload $tag out\PulseConnectSetup.exe --clobber
-            gh release edit $tag --notes "setup sha256: $sha" --latest
+            Write-Output "Release $tag already published - not replacing it (installed apps check its checksum). Bump VERSION to publish."
           }
