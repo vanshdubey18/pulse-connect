@@ -1,0 +1,51 @@
+name: e2e
+on:
+  workflow_dispatch:
+    inputs:
+      code:
+        description: setup code of a throwaway test business
+        required: true
+jobs:
+  fresh-windows-pc:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fake Tally (TallyPrime-like XML server on port 9000)
+        shell: pwsh
+        run: |
+          Start-Process python -ArgumentList "tests\mock_tally.py","9000" -WindowStyle Hidden
+          Start-Sleep 3
+          (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:9000/).Content
+      - name: Download the public installer exactly like a customer
+        shell: pwsh
+        run: |
+          $f = "$env:USERPROFILE\Downloads\PulseConnectSetup-${{ inputs.code }}.exe"
+          Invoke-WebRequest -UseBasicParsing https://github.com/vanshdubey18/pulse-connect/releases/latest/download/PulseConnectSetup.exe -OutFile $f
+          $p = Start-Process $f -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -PassThru; $p.WaitForExit()
+          Test-Path "$env:LOCALAPPDATA\Programs\PulseConnect\PulseConnect.exe"
+          schtasks /Query /TN "Pulse Connect keep-alive"
+      - name: Pair with the setup code and wait for Live
+        shell: pwsh
+        run: |
+          Start-Sleep 5
+          Start-Process "$env:LOCALAPPDATA\Programs\PulseConnect\PulseConnect.exe" -ArgumentList "--code=${{ inputs.code }}","--no-browser"
+          $ok = $false
+          for ($i = 0; $i -lt 60; $i++) {
+            Start-Sleep 5
+            try { $s = (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:47819/api/state).Content | ConvertFrom-Json } catch { continue }
+            Write-Output ("{0}  {1}  {2}" -f $s.step, $s.title, $s.business)
+            if ($s.step -eq "live") { $ok = $true; break }
+          }
+          Get-Content "$env:LOCALAPPDATA\PulseConnect\log.txt" -Tail 30
+          if (-not $ok) { Write-Output "::error::did not reach Live"; exit 1 }
+      - name: Uninstall cleanly
+        shell: pwsh
+        run: |
+          $u = Start-Process "$env:LOCALAPPDATA\Programs\PulseConnect\unins000.exe" -ArgumentList "/VERYSILENT" -PassThru; $u.WaitForExit()
+          Start-Sleep 5
+          "installed after uninstall: " + (Test-Path "$env:LOCALAPPDATA\Programs\PulseConnect\PulseConnect.exe")
+          schtasks /Query /TN "Pulse Connect keep-alive" 2>$null; "keep-alive task left: " + ($LASTEXITCODE -eq 0)
