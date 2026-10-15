@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Pulse">
+<meta name="format-detection" content="telephone=no">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f766e'/%3E%3Ctext x='32' y='41' font-family='Arial' font-weight='700' font-size='22' text-anchor='middle' fill='white'%3EP%3C/text%3E%3C/svg%3E">
+<title>Business Pulse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f6f8; --surface:#ffffff; --surface-2:#f9fafb; --ink:#0f172a; --ink-2:#334155; --muted:#64748b; --faint:#94a3b8;
+  --line:#e5e7eb; --line-2:#eef0f3; --accent:#0f766e; --accent-soft:#e6f4f2; --accent-2:#14b8a6;
+  --good:#15803d; --good-soft:#e8f5ec; --bad:#c2410c; --bad-strong:#b91c1c; --bad-soft:#fdf0ea; --warn:#a16207; --warn-soft:#fdf6e3;
+  --bar-a:#0f766e; --bar-b:#99d5cc; --bar-n:#cbd5e1; --shadow:0 1px 2px rgba(15,23,42,.04),0 4px 16px rgba(15,23,42,.04);
+  --age0:#99d5cc; --age1:#f2d38a; --age2:#f0b37e; --age3:#e8875a; --age4:#c2410c; --age5:#cbd5e1;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0b0f14; --surface:#121820; --surface-2:#161d27; --ink:#e8edf3; --ink-2:#c3cdd8; --muted:#8b98a8; --faint:#5b6775;
+  --line:#232c38; --line-2:#1b232e; --accent:#2dd4bf; --accent-soft:#0f2a28; --accent-2:#5eead4;
+  --good:#4ade80; --good-soft:#0f2417; --bad:#fb923c; --bad-strong:#f87171; --bad-soft:#2a1710; --warn:#facc15; --warn-soft:#262009;
+  --bar-a:#2dd4bf; --bar-b:#1f5e57; --bar-n:#334155; --shadow:none;
+  --age0:#1f5e57; --age1:#8a6d1e; --age2:#a5592a; --age3:#c2410c; --age4:#f87171; --age5:#334155;
+}}
+:root[data-theme="dark"]{
+  --bg:#0b0f14; --surface:#121820; --surface-2:#161d27; --ink:#e8edf3; --ink-2:#c3cdd8; --muted:#8b98a8; --faint:#5b6775;
+  --line:#232c38; --line-2:#1b232e; --accent:#2dd4bf; --accent-soft:#0f2a28; --accent-2:#5eead4;
+  --good:#4ade80; --good-soft:#0f2417; --bad:#fb923c; --bad-strong:#f87171; --bad-soft:#2a1710; --warn:#facc15; --warn-soft:#262009;
+  --bar-a:#2dd4bf; --bar-b:#1f5e57; --bar-n:#334155; --shadow:none;
+  --age0:#1f5e57; --age1:#8a6d1e; --age2:#a5592a; --age3:#c2410c; --age4:#f87171; --age5:#334155;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums}
+a{color:inherit}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px 64px}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topin{max-width:1280px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px;letter-spacing:.5px}
+:root[data-theme="dark"] .logo{color:#04201d}
+.co{font-weight:700;font-size:15px;letter-spacing:-.01em}
+.co small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+.sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:12px;color:var(--ink-2);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 0 0 color-mix(in srgb,var(--good) 60%,transparent);animation:pulse 2.4s infinite}
+.dot.stale{background:var(--warn);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--good) 50%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer}
+.btn:hover{border-color:var(--faint)}
+nav.jump{max-width:1280px;margin:0 auto;padding:0 20px 10px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+nav.jump a{text-decoration:none;font-size:12.5px;color:var(--muted);padding:5px 10px;border-radius:7px;white-space:nowrap}
+nav.jump a:hover{background:var(--surface);color:var(--ink)}
+nav.jump a.on{background:var(--surface);color:var(--ink);font-weight:650;box-shadow:var(--shadow);border:1px solid var(--line)}
+.screen{display:none}.screen.on{display:block;animation:fadein .18s ease}
+@keyframes fadein{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+.screen>section:first-of-type{margin-top:22px}
+.today-grid{display:grid;grid-template-columns:1.35fr 1fr;grid-template-areas:"cash brief" "lights brief";gap:14px;margin-top:8px}
+.lights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.light{cursor:pointer;display:flex;flex-direction:column;gap:6px;text-align:left;font:inherit;color:inherit}
+.light:hover{border-color:var(--faint)}
+.light .lh{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:650;color:var(--ink-2)}
+.light .st{white-space:nowrap;margin-left:auto;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:999px}
+.light .st.red{background:var(--bad-soft);color:var(--bad)} .light .st.amber{background:var(--warn-soft);color:var(--warn)} .light .st.green{background:var(--good-soft);color:var(--good)}
+.lamp{width:12px;height:12px;border-radius:50%;flex:none}
+.lamp.red{background:var(--bad);box-shadow:0 0 0 4px var(--bad-soft)} .lamp.amber{background:var(--warn);box-shadow:0 0 0 4px var(--warn-soft)} .lamp.green{background:var(--good);box-shadow:0 0 0 4px var(--good-soft)}
+.light .lv{font-size:24px;font-weight:700;letter-spacing:-.02em}
+.light .ls{font-size:13.5px;color:var(--ink-2);line-height:1.45}
+.light .go{font-size:12.5px;color:var(--accent);font-weight:600;margin-top:auto}
+.say{font-size:14px!important;color:var(--ink-2)!important;line-height:1.5;margin:0}
+.card .say{margin:2px 0 12px}
+.sh .say{font-size:14px}
+.kpi .e{font-size:13px;color:var(--ink-2);line-height:1.45}
+.wa{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;margin-top:14px;min-height:46px;border:0;border-radius:12px;background:#25D366;color:#073b1c;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.wa svg{width:20px;height:20px}
+.wa:hover{filter:brightness(.97)}
+.brief.clip .b:nth-child(n+4){display:none}
+.morebrief{display:block;width:100%;margin-top:4px;min-height:40px;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;color:var(--ink-2);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+h1.greet{font-size:26px;letter-spacing:-.02em;margin:26px 0 4px;font-weight:700}
+.sub{color:var(--muted);margin:0 0 18px}
+section{margin-top:34px;scroll-margin-top:110px}
+.sh{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+.sh h2{font-size:18px;letter-spacing:-.015em;margin:0;font-weight:700}
+.sh p{margin:0;color:var(--muted);font-size:13px}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g-hero{grid-template-columns:1.35fr 1fr}
+@media (max-width:1050px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g-hero,.g3{grid-template-columns:1fr}.today-grid{grid-template-columns:1fr;grid-template-areas:"cash" "lights" "brief"}}
+@media (max-width:720px){.g2,.g4{grid-template-columns:1fr}.wrap{padding:0 14px 48px}.topin{padding:10px 14px}.chip.hide-sm{display:none}h1.greet{font-size:22px}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow);min-width:0;position:relative}
+.card h3{margin:0 0 2px;font-size:13px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;gap:6px}
+.card .q{color:var(--muted);font-size:12px;margin:0 0 10px}
+.big{font-size:30px;font-weight:700;letter-spacing:-.025em;line-height:1.1}
+.big.xl{font-size:40px}
+.mid{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.muted{color:var(--muted)} .faint{color:var(--faint)}
+.good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line-2);color:var(--ink-2);white-space:nowrap}
+.pill.bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+.pill.good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.pill.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.pill.gov{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.info{width:16px;height:16px;border-radius:50%;border:1px solid var(--line);display:inline-grid;place-items:center;font-size:10px;color:var(--faint);cursor:help;font-weight:600;position:relative;flex:none}
+.info:hover::after,.info:focus::after{content:attr(data-tip);position:absolute;left:50%;top:22px;transform:translateX(-50%);width:260px;background:var(--ink);color:var(--bg);font-weight:400;font-size:12px;line-height:1.45;padding:9px 11px;border-radius:9px;z-index:30;white-space:normal;text-align:left;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.hero-main{padding:22px;background:linear-gradient(135deg,var(--surface) 0%,var(--surface) 55%,var(--accent-soft) 140%)}
+.split{display:flex;gap:22px;flex-wrap:wrap;margin-top:14px}
+.split>div{min-width:110px}
+.split .k{font-size:12px;color:var(--muted)} .split .v{font-size:17px;font-weight:650}
+.brief{display:flex;flex-direction:column;gap:2px}
+.brief .b{display:flex;gap:11px;padding:10px 0;border-bottom:1px solid var(--line-2);font-size:13.5px;color:var(--ink-2)}
+.brief .b:last-child{border-bottom:none}
+.brief .m{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:var(--faint)}
+.brief .m.good{background:var(--good)} .brief .m.bad{background:var(--bad)} .brief .m.warn{background:var(--warn)} .brief .m.info{background:var(--accent)}
+.brief b{color:var(--ink);font-weight:650}
+.agebar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line-2);margin:12px 0 8px}
+.agebar span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-weight:600;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+td.r,th.r{text-align:right}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--surface-2)}
+tr.det td{background:var(--surface-2);padding:6px 10px 12px}
+.nm{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:550}
+.tw{overflow-x:auto;margin:0 -18px;padding:0 18px}
+.mini{width:100%;font-size:12px} .mini td{padding:5px 8px;border-bottom:1px dashed var(--line)}
+.agecell{display:inline-block;min-width:54px;text-align:center;padding:2px 7px;border-radius:6px;font-size:12px;font-weight:600}
+.hb{display:flex;flex-direction:column;gap:9px}
+.hb .l{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;margin-bottom:3px}
+.hb .l span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb .t{height:8px;background:var(--line-2);border-radius:4px;overflow:hidden}
+.hb .f{height:100%;background:var(--bar-a);border-radius:4px}
+.callout{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:12px;background:var(--warn-soft);color:var(--ink-2);font-size:13px;margin-top:14px}
+.callout b{color:var(--ink)}
+.kpi .v{font-size:26px;font-weight:700;letter-spacing:-.02em}
+.kpi .e{font-size:12.5px;color:var(--muted);margin-top:4px}
+input.search{width:100%;max-width:280px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px}
+svg text{fill:var(--muted);font-family:inherit;font-size:11px}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:8px 10px;border-radius:8px;z-index:50;display:none;line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+details.how{margin-top:40px;color:var(--muted);font-size:13px}
+details.how summary{cursor:pointer;font-weight:600;color:var(--ink-2)}
+details.how li{margin:6px 0}
+.empty{color:var(--faint);font-size:13px;padding:16px 0}
+.tabs{display:inline-flex;border:1px solid var(--line);border-radius:9px;padding:2px;background:var(--surface-2)}
+.tabs button{border:0;background:transparent;font:inherit;font-size:12px;padding:5px 10px;border-radius:7px;color:var(--muted);cursor:pointer}
+.tabs button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow);font-weight:600}
+@media print{header.top,nav.jump,.btn{display:none}.card{break-inside:avoid;box-shadow:none}body{background:#fff}}
+/* ---------- Ask (assistant) ---------- */
+.askfab{position:fixed;right:22px;bottom:22px;z-index:40;display:flex;align-items:center;gap:9px;padding:12px 18px 12px 15px;border-radius:999px;border:0;background:var(--accent);color:#fff;font:inherit;font-weight:650;font-size:14px;cursor:pointer;box-shadow:0 8px 28px rgba(15,118,110,.35)}
+:root[data-theme="dark"] .askfab{color:#04201d}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .askfab{color:#04201d}}
+.askfab:hover{transform:translateY(-1px)}
+.askfab svg{width:18px;height:18px}
+.askpanel{position:fixed;top:0;right:0;bottom:0;width:min(460px,100vw);z-index:60;background:var(--surface);border-left:1px solid var(--line);box-shadow:-12px 0 40px rgba(15,23,42,.12);display:flex;flex-direction:column;transform:translateX(105%);transition:transform .22s ease}
+.askpanel.open{transform:none}
+.askhead{display:flex;align-items:flex-start;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.askhead .t{font-weight:700;font-size:15px}
+.askhead .s{font-size:12px;color:var(--muted)}
+.askbody{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.msg{max-width:92%;font-size:13.5px;line-height:1.55}
+.msg.u{align-self:flex-end;background:var(--accent);color:#fff;padding:9px 13px;border-radius:14px 14px 4px 14px;white-space:pre-wrap}
+:root[data-theme="dark"] .msg.u{color:#04201d}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .msg.u{color:#04201d}}
+.msg.a{align-self:flex-start;color:var(--ink-2)}
+.msg.a p{margin:0 0 8px} .msg.a p:last-child{margin-bottom:0}
+.msg.a ul,.msg.a ol{margin:4px 0 8px;padding-left:20px} .msg.a li{margin:3px 0}
+.msg.a b,.msg.a strong{color:var(--ink)}
+.msg.a h4{margin:10px 0 6px;font-size:13.5px;color:var(--ink)}
+.msg.a table{font-size:12.5px;margin:6px 0 10px;border:1px solid var(--line);border-radius:8px;display:block;overflow-x:auto}
+.msg.a th{font-size:11px;padding:6px 8px;background:var(--surface-2)} .msg.a td{padding:6px 8px}
+.msg.a code{font-size:12px;background:var(--surface-2);padding:1px 4px;border-radius:4px}
+.msg.err{color:var(--bad);font-size:12.5px}
+.thinking{display:inline-flex;gap:4px;align-items:center;color:var(--muted);font-size:12.5px}
+.thinking i{width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.3;animation:blink 1.2s infinite}
+.thinking i:nth-child(2){animation-delay:.2s}.thinking i:nth-child(3){animation-delay:.4s}
+@keyframes blink{50%{opacity:1}}
+.sugg{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.sugg button{text-align:left;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;cursor:pointer}
+.sugg button:hover{border-color:var(--accent);color:var(--ink)}
+.askfoot{border-top:1px solid var(--line);padding:12px 14px 14px}
+.askin{display:flex;gap:8px;align-items:flex-end;border:1px solid var(--line);border-radius:12px;padding:6px 6px 6px 12px;background:var(--surface-2)}
+.askin:focus-within{border-color:var(--accent)}
+.askin textarea{flex:1;border:0;background:transparent;color:var(--ink);font:inherit;font-size:13.5px;resize:none;outline:none;max-height:140px;padding:6px 0}
+.sendbtn{width:34px;height:34px;border-radius:9px;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;flex:none}
+.sendbtn:disabled{opacity:.4;cursor:default}
+.sendbtn svg{width:16px;height:16px}
+.asknote{font-size:11px;color:var(--faint);margin-top:7px;text-align:center}
+.micbtn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);display:grid;place-items:center;cursor:pointer;flex:none}
+.micbtn svg{width:17px;height:17px}
+.micbtn.rec{background:var(--bad);border-color:var(--bad);color:#fff;animation:recp 1.2s infinite}
+@keyframes recp{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--bad) 45%,transparent)}70%{box-shadow:0 0 0 9px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.langbtn{height:34px;min-width:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:12px;font-weight:700;cursor:pointer;flex:none;padding:0 6px}
+.voicehint{font-size:12px;color:var(--muted);margin:0 0 8px;text-align:center}
+.setup{background:var(--warn-soft);border-radius:12px;padding:14px;font-size:13px;color:var(--ink-2)}
+.setup b{color:var(--ink)} .setup code{font-size:12px;background:var(--surface);padding:1px 5px;border-radius:4px}
+.askwhy{border:0;background:none;color:var(--accent);font:inherit;font-size:12px;cursor:pointer;padding:0;margin-left:4px;white-space:nowrap}
+
+@media print{.askfab,.askpanel{display:none}}
+/* ================= PHONE ================= */
+.tabbar{display:none}
+
+.cname{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;min-width:0}
+html{-webkit-text-size-adjust:100%}
+button,a,.click{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+@media (max-width:720px){
+  body{font-size:15px;padding-bottom:calc(130px + env(safe-area-inset-bottom))}
+  .wrap{padding:0 12px 28px;overflow-x:clip}
+  header.top{padding-top:env(safe-area-inset-top)}
+  .topin{padding:9px 12px;gap:10px}
+  .logo{width:30px;height:30px;font-size:11px;border-radius:8px}
+  .co{font-size:14px;min-width:0} .co small{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chip{padding:5px 9px;font-size:11.5px}
+  .btn{min-height:36px;min-width:36px;padding:6px 10px}
+  .btn.hide-sm{display:none}
+  .co{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+  .co small{display:none}
+  .sp{display:none}
+  .xtra{display:none!important}
+  .showall{display:block;width:100%;margin-top:10px;min-height:42px;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;color:var(--accent);font:inherit;font-size:13.5px;font-weight:650}
+  nav.jump{display:none}
+  h1.greet{font-size:21px;margin:16px 0 2px}
+  .sub{font-size:13px;margin-bottom:12px}
+  section{margin-top:22px;scroll-margin-top:64px}
+  .sh{flex-direction:column;gap:2px;margin-bottom:10px}
+  .sh h2{font-size:18px}
+  .grid{gap:10px}
+  .card{padding:15px;border-radius:14px}
+  .card .q{font-size:12.5px;margin-bottom:8px}
+  .hero-main{padding:18px}
+  .big.xl{font-size:36px}
+  .split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+  .split>div{min-width:0}
+  .split .k{font-size:11.5px} .split .v{font-size:15px}
+  .brief .b{font-size:14px;padding:11px 0}
+
+  .askwhy{display:inline-block;padding:6px 0 0;margin:0;font-size:13px}
+  .lights{grid-template-columns:1fr;gap:10px}
+  .light{padding:14px}
+  .light .lv{font-size:22px}
+  .today-grid{gap:10px}
+  .screen>section:first-of-type{margin-top:14px}
+  /* 2-up money tiles */
+  #today .g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #today .g4 .card{padding:13px}
+  #today .g4 .card h3{font-size:12.5px}
+  #today .g4 .card .q{display:none}
+  #today .g4 .big{font-size:22px;margin-top:6px}
+  #today .g4 .pill{font-size:11px;padding:3px 7px;white-space:normal;line-height:1.3}
+  #today .g4 .info{display:none}
+  .agebar{height:8px;margin:10px 0 2px}
+  .g2,.g3,.g4,.g-hero{grid-template-columns:1fr}
+  .card[style*="grid-column"]{grid-column:auto!important}
+  .kpi .v{font-size:24px}
+  #kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #kpis .card{padding:13px} #kpis h3{font-size:12px}
+  #mthStats{display:grid!important;grid-template-columns:repeat(2,1fr);gap:12px!important}
+  /* lists */
+  .hb{gap:12px} .hb .l{font-size:13.5px}
+  .mini{font-size:13.5px} .mini td{padding:9px 6px} .mini td:last-child{white-space:nowrap}
+  .nm{max-width:none;white-space:normal;overflow:visible;line-height:1.3}
+  .tw{margin:0;padding:0;overflow:visible}
+  /* tables become cards */
+  #custTable thead,#suppTable thead{display:none}
+  #custTable,#suppTable,#custTable tbody,#suppTable tbody{display:block}
+  #custTable tr.click,#suppTable tr.click{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:13px 2px;border-bottom:1px solid var(--line-2);align-items:center}
+  #custTable tr.click td,#suppTable tr.click td{display:block;padding:0;border:0;background:none!important;text-align:left}
+  #custTable td.c-name,#suppTable td.c-name{grid-column:1;grid-row:1}
+  #custTable td.c-owe,#suppTable td.c-owe{grid-column:2;grid-row:1;text-align:right;font-size:16px}
+  #custTable td.c-90,#suppTable td.c-90{grid-column:1;grid-row:2;font-size:12.5px}
+  #custTable td.c-90::before,#suppTable td.c-90::before{content:"Older than 90 days: ";color:var(--muted)}
+  #custTable td.c-90.none,#suppTable td.c-90.none{visibility:hidden}
+  #custTable td.c-old{grid-column:2;grid-row:2;text-align:right}
+  #custTable td.c-sales,#suppTable td.c-sales{display:none!important}
+  tr.det{display:block} tr.det td{display:block;padding:4px 2px 12px;border:0}
+  tr.det .mini td{padding:7px 4px;font-size:12.5px}
+  #custTabs{width:100%;display:flex} #custTabs button{flex:1;padding:9px 6px;font-size:13px}
+  .cust-ctrls{width:100%;flex-direction:column;align-items:stretch!important}
+  input.search{max-width:none;font-size:16px;padding:10px 12px;border-radius:10px}
+  .callout{font-size:13.5px}
+  details.how{font-size:13.5px} details.how ul{padding-left:18px}
+  /* tooltips as bottom sheet */
+  .info{width:20px;height:20px;font-size:11px}
+  .info:hover::after{content:none}
+  .info:focus::after{content:attr(data-tip);position:fixed;left:12px;right:12px;bottom:calc(80px + env(safe-area-inset-bottom));top:auto;transform:none;width:auto;font-size:13.5px;padding:13px 15px;border-radius:12px;z-index:70}
+  .tip{max-width:calc(100vw - 24px);font-size:13px}
+  /* bottom tab bar */
+  .askfab{right:14px;bottom:calc(76px + env(safe-area-inset-bottom));padding:11px 16px 11px 13px;font-size:14px}
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:45;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  .tabbar a,.tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 0;min-height:50px;justify-content:center;border:0;background:none;color:var(--muted);font:inherit;font-size:11px;font-weight:600;text-decoration:none;border-radius:10px}
+  .tabbar svg{width:22px;height:22px}
+  .tabbar .on{color:var(--accent)}
+
+  /* chat full screen */
+  .askpanel{width:100vw;border-left:0;padding-top:env(safe-area-inset-top)}
+  .askhead{padding:12px 14px}
+  .askbody{padding:14px}
+  .msg{font-size:15px;max-width:96%}
+  .sugg button{font-size:14.5px;padding:12px 14px}
+  .askfoot{padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
+  .askin textarea{font-size:16px}
+  .sendbtn,.micbtn{width:40px;height:40px} .langbtn{height:40px;min-width:40px}
+}
+@media (max-width:380px){ .big.xl{font-size:31px} #today .g4 .big{font-size:20px} .split .v{font-size:14px} }
+@media print{.tabbar{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topin">
+    <div class="logo" id="coLogo">P</div>
+    <div class="co" id="coName">Business Pulse<small>live from Tally</small></div>
+    <div class="sp"></div>
+    <span class="chip" id="syncChip"><span class="dot" id="syncDot"></span><span id="syncText">-</span></span>
+    <button class="btn" id="themeBtn" title="Switch light / dark" aria-label="Switch light or dark"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg></button>
+    <button class="btn hide-sm" id="phoneBtn" style="display:none">Open on phone</button>
+    <button class="btn hide-sm" onclick="window.print()">Print</button>
+  </div>
+  <nav class="jump" id="topTabs">
+    <a href="#today" data-s="today">Today</a><a href="#dues" data-s="dues">Dues</a><a href="#profit" data-s="profit">Sales &amp; profit</a><a href="#stock" data-s="stock">Stock</a><a href="#more" data-s="more">More</a>
+  </nav>
+</header>
+
+<div class="wrap">
+ <div class="screen" id="scr-today" data-s="today">
+  <h1 class="greet" id="greet">Good day</h1>
+  <p class="sub" id="subline"></p>
+  <section id="today" class="today-grid">
+      <div class="card hero-main" style="grid-area:cash">
+        <h3>Cash position <span class="info" tabindex="0" data-tip="Cash in hand + all bank balances, minus the overdraft (OD/CC) amount currently used. Straight from Tally ledger balances.">i</span></h3>
+        <p class="q">Can we pay what's due this week?</p>
+        <div class="big xl num" id="netCash">-</div>
+        <div class="muted" id="netCashNote" style="margin-top:4px"></div>
+        <div class="split" id="cashSplit"></div>
+      </div>
+      <div class="lights" id="lights" style="grid-area:lights"></div>
+      <div class="card" style="grid-area:brief">
+        <h3>What you should know today <span class="info" tabindex="0" data-tip="Automatic notes from today's Tally data. Green = good news, orange = needs attention.">i</span></h3>
+        <div class="brief" id="brief"></div>
+        <button class="wa" id="waBtn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3a.5.5 0 0 0 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.3.8 3.2.7a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg>Send today's summary on WhatsApp</button>
+      </div>
+  </section>
+ </div>
+
+ <div class="screen" id="scr-dues" data-s="dues">
+  <section id="recv">
+    <div class="sh"><h2>Who owes us money?</h2><p class="say" id="recvSub"></p></div>
+    <div class="grid g3">
+      <div class="card" style="grid-column:span 2">
+        <h3>How old is the unpaid money <span class="info" tabindex="0" data-tip="Each customer's real balance (from the ledger) is matched against their newest open bills first, on the assumption that older bills were paid first. Age = days since the bill date. 'No bill ref' = balance with no matching bill in Tally.">i</span></h3>
+        <p class="q">Age counted from the bill date</p><p class="say" id="ageSay"></p>
+        <div id="ageChart"></div>
+      </div>
+      <div class="card">
+        <h3>Government vs private</h3><p class="q">Who the money is stuck with</p>
+        <div id="govSplit"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="row" style="justify-content:space-between;margin-bottom:6px">
+        <div><h3>Customers who owe us</h3><p class="q" style="margin:0">Tap a row to see the bills</p></div>
+        <div class="row cust-ctrls"><div class="tabs" id="custTabs"><button data-f="all" class="on">All</button><button data-f="gov">Government</button><button data-f="pvt">Private</button></div><input class="search" id="custSearch" placeholder="Search customer"></div>
+      </div>
+      <div class="tw"><table id="custTable"><thead><tr><th>Customer</th><th class="r">Owes us</th><th class="r">Older than 90 days</th><th class="r">Oldest bill</th><th class="r">Billed last 12 m</th></tr></thead><tbody></tbody></table></div>
+      <div id="custMore" class="muted" style="font-size:12px;margin-top:8px"></div>
+    </div>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card"><h3>Payments received this week</h3><p class="q">Largest first</p><div id="rcpts"></div></div>
+      <div class="card"><h3>Advance money we are holding <span class="info" tabindex="0" data-tip="Customer ledgers with a credit balance: they paid more than billed, or advances / unadjusted receipts. Often old receipts that were never matched to invoices.">i</span></h3><p class="q" id="advSub"></p><div id="advList"></div></div>
+    </div>
+    <div class="callout" id="hygiene" style="display:none"></div>
+  </section>
+ </div>
+
+ <div class="screen" id="scr-profit" data-s="profit">
+  <section id="flow">
+    <div class="sh"><h2>Are we selling and collecting?</h2><p class="say" id="flowSay">Last 13 months, from every sales and receipt entry in Tally</p></div>
+    <div class="grid g-hero">
+      <div class="card">
+        <div class="row" style="justify-content:space-between"><div class="legend"><span><i style="background:var(--bar-a)"></i>Billed to customers</span><span><i style="background:var(--bar-b)"></i>Collected</span></div>
+          <span class="info" tabindex="0" data-tip="Billed = invoice value incl. GST charged to customer ledgers in Sales vouchers. Collected = amounts credited to customer ledgers in Receipt vouchers. Credit notes and journal deductions (TDS etc.) are not counted as collections.">i</span></div>
+        <div id="flowChart" style="margin-top:6px"></div>
+      </div>
+      <div class="grid" style="gap:14px">
+        <div class="card"><h3>This month so far</h3><p class="q" id="mthLabel"></p><div class="row" style="gap:26px" id="mthStats"></div></div>
+        <div class="card"><h3>Collected for every ₹100 billed</h3><p class="q">Last 12 months</p><div class="big num" id="collRatio">-</div><div class="muted" id="collRatioNote" style="margin-top:4px;font-size:12.5px"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="profit">
+    <div class="sh"><h2>Are we making money?</h2><p class="say" id="plSub"></p></div>
+    <div class="grid g-hero">
+      <div class="card"><h3>From sales to profit <span class="info" tabindex="0" data-tip="Financial year to date, from Tally ledger balances. Cost of goods = opening stock + purchases + direct expenses − closing stock. Year-end entries (depreciation, tax, provisions) may not be posted yet.">i</span></h3><p class="q">Financial year so far</p><div id="waterfall"></div></div>
+      <div class="grid" style="gap:14px">
+        <div class="card"><h3>Same period last year</h3><p class="q" id="lyLabel"></p><div id="lyCompare"></div></div>
+        <div class="card"><h3>Biggest running costs</h3><p class="q">Indirect expenses this year</p><div class="hb" id="topExp"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="cust">
+    <div class="sh"><h2>Our customers</h2><p class="say" id="custSay">Billing over the last 12 months</p></div>
+    <div class="grid g2">
+      <div class="card"><h3>Biggest customers</h3><p class="q" id="concSub"></p><div class="hb" id="topCust"></div></div>
+      <div class="card"><h3>Gone quiet <span class="info" tabindex="0" data-tip="Customers who were billed in the last 12 months but have not been billed at all in the last 90 days. Worth a call.">i</span></h3><p class="q">Bought before, nothing in the last 90 days</p><div id="quiet"></div></div>
+    </div>
+  </section>
+ </div>
+
+ <div class="screen" id="scr-stock" data-s="stock">
+  <section id="stock">
+    <div class="sh"><h2>What's in the godown?</h2><p class="say" id="stockSub"></p></div>
+    <div class="grid g3">
+      <div class="card"><h3>Stock by group</h3><p class="q">Closing value</p><div class="hb" id="stockGroups"></div></div>
+      <div class="card"><h3>Not moved in 6 months <span class="info" tabindex="0" data-tip="Items whose quantity today is exactly the same as 180 days ago, so nothing came in or went out. Good candidates for return to principal, discounting or liquidation.">i</span></h3><p class="q" id="deadSub"></p><p class="say" id="deadSay"></p><div id="deadList"></div></div>
+      <div class="card"><h3>Best sellers, last 90 days</h3><p class="q">By sales value</p><div class="hb" id="topItems"></div></div>
+    </div>
+  </section>
+ </div>
+
+ <div class="screen" id="scr-more" data-s="more">
+  <section id="pay">
+    <div class="sh"><h2>Whom do we owe?</h2><p class="say" id="paySub"></p></div>
+    <div class="grid g3">
+      <div class="card"><h3>How old are our dues</h3><p class="q">Same newest-bills-first matching</p><div id="payAge"></div></div>
+      <div class="card" style="grid-column:span 2"><h3>Suppliers we owe most</h3><p class="q">Tap a row to see the bills</p>
+        <div class="tw"><table id="suppTable"><thead><tr><th>Supplier</th><th class="r">We owe</th><th class="r">Older than 90 days</th><th class="r">Bought last 12 m</th></tr></thead><tbody></tbody></table></div></div>
+    </div>
+  </section>
+
+  <section id="health">
+    <div class="sh"><h2>Health check</h2><p class="say">How fast money moves through the business</p></div>
+    <div class="grid g4" id="kpis"></div>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card"><h3>Cash vs overdraft, month-end</h3><p class="q">Cash + bank (line) against OD used (bars)</p><div id="cashChart"></div></div>
+      <div class="card"><h3>Bank, cash and loans</h3><p class="q">Balances as per Tally right now</p><div id="accts"></div></div>
+    </div>
+  </section>
+
+  <details class="how"><summary>How these numbers are calculated</summary>
+    <ul>
+      <li>Everything comes from your TallyPrime company through a read-only connection on this computer. Nothing is written back to Tally, and the data never leaves this computer.</li>
+      <li><b>Money to collect / we owe</b> use party ledger balances. Bill-wise detail is only used to work out the age, matching each balance to the newest open bills first.</li>
+      <li><b>Billed / collected</b> are taken from each Sales and Receipt voucher's customer line, incl. GST.</li>
+      <li><b>Profit</b> uses ledger balances under Sales, Purchase, Direct and Indirect groups plus stock valuation at the start of the year and today.</li>
+      <li><b>Government</b> customers are recognised by name (Government, Department, Directorate, Municipal…).</li>
+      <li>This page refreshes itself every 5 minutes. The sync program pulls fresh data from Tally every <span id="everyTxt">15</span> minutes.</li>
+    </ul>
+  </details>
+ </div>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Screens">
+  <a href="#today" data-s="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Today</a>
+  <a href="#dues" data-s="dues"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M17 4.5a3.5 3.5 0 0 1 0 7M19 14.8c1.5.9 2.4 2.6 2.7 5.2"/></svg>Dues</a>
+  <a href="#profit" data-s="profit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Sales</a>
+  <a href="#stock" data-s="stock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>Stock</a>
+  <a href="#more" data-s="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More</a>
+</nav>
+<div class="tip" id="tip"></div>
+<div id="phoneModal" style="display:none;position:fixed;inset:0;z-index:80;background:rgba(15,23,42,.45);place-items:center">
+  <div class="card" style="width:min(380px,92vw);text-align:center;padding:24px">
+    <h3 style="justify-content:center;font-size:16px;color:var(--ink)">Open Pulse on a phone</h3>
+    <div id="phoneModes" style="display:none;gap:6px;justify-content:center;margin:10px 0 2px">
+      <button class="btn" id="pmRemote">Anywhere</button><button class="btn" id="pmLan">Same Wi-Fi</button>
+    </div>
+    <p class="q" id="phoneHint" style="margin:6px 0 14px">Phone must be on the same office Wi-Fi as this laptop. Scan with the phone camera.</p>
+    <div id="qrBox" style="display:grid;place-items:center;background:#fff;padding:14px;border-radius:12px;margin:0 auto 12px;width:max-content"></div>
+    <div class="num" id="phoneUrl" style="font-size:12px;word-break:break-all;color:var(--muted)"></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+      <button class="btn" id="phoneCopy">Copy link</button>
+      <a class="btn" id="phoneWa" target="_blank" rel="noopener" style="text-decoration:none">Send on WhatsApp</a>
+    </div>
+    <p class="q" style="margin:12px 0 0">Tip: on the phone, use "Add to Home Screen" to open it like an app.</p>
+    <button class="btn" style="margin-top:14px" onclick="document.getElementById('phoneModal').style.display='none'">Close</button>
+  </div>
+</div>
+<button class="askfab" id="askFab" aria-label="Ask about the business"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Ask Pulse</button>
+<aside class="askpanel" id="askPanel" aria-label="Ask about the business">
+  <div class="askhead"><div style="flex:1"><div class="t">Ask about your business</div><div class="s" id="askSub">Answers from your Tally data</div></div>
+    <button class="btn" id="askClear" title="New chat">New</button><button class="btn" id="askClose" aria-label="Close">✕</button></div>
+  <div class="askbody" id="askBody"></div>
+  <div class="askfoot">
+    <div class="askin"><textarea id="askInput" rows="1" placeholder="Ask anything, in English or Hindi"></textarea>
+      <button class="langbtn" id="askLang" title="Voice language" style="display:none">EN</button>
+      <button class="micbtn" id="askMic" aria-label="Speak your question" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <button class="sendbtn" id="askSend" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    <div class="asknote">Answers use the synced Tally data. Check important numbers in Tally before acting.</div>
+  </div>
+</aside>
+
+<script>
+let D = /*__DATA__*/null;
+(function(){
+if(!D){document.body.innerHTML='<p style="padding:40px;font-family:sans-serif">No data yet. Run the sync first.</p>';return;}
+const $=s=>document.querySelector(s), el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// Indian money formatting
+function inr(v,opt={}){ if(v==null||isNaN(v))return '–'; const a=Math.abs(v), s=v<0?'−':'';
+  if(a>=1e7) return s+'₹'+(a/1e7).toFixed(a>=1e9?0:2).replace(/\.?0+$/,'')+' Cr';
+  if(a>=1e5) return s+'₹'+(a/1e5).toFixed(a>=1e6?1:2).replace(/\.?0+$/,'')+' L';
+  if(a>=1e3) return s+'₹'+(a/1e3).toFixed(1).replace(/\.0$/,'')+'K';
+  return s+'₹'+Math.round(a); }
+function full(v){ return '₹'+Math.round(v).toLocaleString('en-IN'); }
+const pct=(a,b)=>b?Math.round(a/b*100):0;
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const mlabel=k=>MON[+k.slice(5)-1]+" '"+k.slice(2,4);
+function ageTxt(d){ if(d==null)return 'no bill'; if(d<60)return d+' days'; if(d<730)return Math.round(d/30)+' months'; return (d/365).toFixed(1).replace(/\.0$/,'')+' years'; }
+function ageColor(d){ if(d==null)return 'var(--age5)'; return d<=30?'var(--age0)':d<=60?'var(--age1)':d<=90?'var(--age2)':d<=180?'var(--age3)':'var(--age4)'; }
+const tip=$('#tip');
+let tipT;function showTip(e,h){clearTimeout(tipT);tip.innerHTML=h;tip.style.display='block';const x=Math.max(10,Math.min(e.clientX+14,innerWidth-tip.offsetWidth-10));let y=e.clientY+14;if(y+tip.offsetHeight>innerHeight-80)y=e.clientY-tip.offsetHeight-12;tip.style.left=x+'px';tip.style.top=Math.max(10,y)+'px';}
+addEventListener('scroll',()=>{if(tip.style.display==='block')tip.style.display='none'},{passive:true});
+function hideTip(){tip.style.display='none'}
+
+// theme
+const root=document.documentElement;
+try{const t=localStorage.getItem('tms-theme');if(t)root.dataset.theme=t;}catch(e){}
+$('#themeBtn').onclick=()=>{const dark=root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;root.dataset.theme=dark?'light':'dark';try{localStorage.setItem('tms-theme',root.dataset.theme)}catch(e){};render();};
+
+// header
+let M,H,synced; function bind(){M=D.meta;H=D.hero;synced=new Date(M.synced_at);} bind();
+$('#coLogo').textContent=M.brand||(M.company.match(/\b[A-Za-z]/g)||['P']).slice(0,3).join('').toUpperCase();if(M.ask_label){const f=$('#askFab');if(f&&f.lastChild)f.lastChild.textContent=M.ask_label;}$('#coName').innerHTML=esc(M.company.replace(/\b\w+/g,w=>w[0]+w.slice(1).toLowerCase()))+'<small>Business Pulse · live from Tally</small>';
+function syncLabel(){const mins=Math.round((Date.now()-synced)/60000);const stale=mins>(M.every||15)*2+5;
+  $('#syncDot').classList.toggle('stale',stale);
+  const when=mins<1?'just now':mins<60?mins+' min ago':synced.toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  $('#syncText').textContent=innerWidth<=720?(mins<1?'Live':when):(stale?'Last synced ':'Synced ')+when;}
+syncLabel();setInterval(syncLabel,30000);
+$('#everyTxt').textContent=M.every||15;
+const hr=new Date().getHours();
+$('#greet').textContent=(hr<12?'Good morning':hr<17?'Good afternoon':'Good evening');
+$('#subline').textContent='Here is everything happening at '+M.company.replace(/\b\w+/g,w=>w[0]+w.slice(1).toLowerCase())+' as of '+synced.toLocaleString('en-IN',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+'.';
+
+function render(){renderCore();clampLists();}
+function renderCore(){
+// ---------- HERO
+const net=H.cash+H.bank-H.od;
+$('#netCash').textContent=inr(net); $('#netCash').className='big xl num '+(net<0?'bad':'');
+$('#netCashNote').innerHTML=net<0?'More overdraft used than cash and bank put together.':'Cash and bank are more than the overdraft used.';
+const odl=M.od_limit||0;
+$('#cashSplit').innerHTML=[['Cash in hand',H.cash],['In bank',H.bank],['Overdraft used',-H.od]].map(([k,v])=>`<div><div class="k">${k}</div><div class="v num ${v<0?'bad':''}">${inr(v)}</div></div>`).join('')
+  +(odl?`<div><div class="k">OD headroom</div><div class="v num">${inr(odl-H.od)}</div></div>`:'');
+const B=D.brief||[];
+const BR=$('#brief'); BR.classList.toggle('clip',B.length>3&&!BR.dataset.all);
+$('#brief').innerHTML=B.length?B.map(b=>{let t=esc(b.text);for(const k in (b.vals||{}))t=t.replace('{'+k+'}','<b class="num">'+inr(b.vals[k])+'</b>');t=t.replace('{dir}',b.dir||'').replace('{pct}',b.pct??'');return `<div class="b"><span class="m ${b.tone}"></span><div>${t} <button class="askwhy" data-q="${esc(b.text.replace(/\{(\w+)\}/g,(m,k)=>b.vals&&k in b.vals?inr(b.vals[k]):(k==='dir'?b.dir:k==='pct'?b.pct:'')))}">Ask why →</button></div></div>`}).join('')+(B.length>3&&!BR.dataset.all?`<button class="morebrief" onclick="this.parentNode.dataset.all=1;this.parentNode.classList.remove('clip');this.remove()">Show ${B.length-3} more</button>`:''):'<div class="empty">Nothing unusual today.</div>';
+const RB=D.recv.buckets, rtot=Object.values(RB).reduce((a,b)=>a+b,0)||1;
+const AGEK=[['0-30','var(--age0)','0–30 days'],['31-60','var(--age1)','31–60'],['61-90','var(--age2)','61–90'],['91-180','var(--age3)','91–180'],['180+','var(--age4)','180+ days'],['No bill ref','var(--age5)','No bill ref']];
+const S=D.stock;
+const P=D.pl.fytd, LY=D.pl.ly;
+$('#netCashNote').innerHTML=net<0?`You have ${inr(H.cash+H.bank)} in cash and bank, but ${inr(H.od)} of overdraft is used. If the overdraft were paid off today you would be ${inr(-net)} short.`
+  :`You have ${inr(H.cash+H.bank)} in cash and bank. ${H.od?`After clearing the ${inr(H.od)} overdraft, ${inr(net)} would be left.`:'No overdraft is being used.'}`;
+// three status lights
+const oldShare=(H.overdue_90||0)/(H.to_collect||1);
+const lc=oldShare>.5?'red':oldShare>.25?'amber':'green';
+let sc='amber', sTxt='', sVal=P.sales;
+if(LY&&LY.sales){const ch=(P.sales-LY.sales)/Math.abs(LY.sales); sc=ch<-.2?'red':ch<0?'amber':'green';
+  sTxt=ch<0?`${Math.round(-ch*100)}% lower than last year by this date (${inr(LY.sales)}).`:`${Math.round(ch*100)}% higher than last year by this date (${inr(LY.sales)}).`;}
+else sTxt='Sales this financial year so far.';
+const deadShare=(S.no_move_180_value||0)/(S.value||1);
+const kc=deadShare>.4?'red':deadShare>.2?'amber':'green';
+const word={red:'Needs attention',amber:'Watch',green:'Good'};
+const LT=[['Collections','dues',lc,inr(H.to_collect),`Customers owe us this. ${inr(H.overdue_90)} of it (${Math.round(oldShare*100)}%) is more than 3 months old.`],
+  ['Sales','profit',sc,inr(sVal),'Sales this year: '+sTxt],
+  ['Stock','stock',kc,inr(S.value),`Goods in the godown. ${inr(S.no_move_180_value)} (${Math.round(deadShare*100)}%) has not moved in 6 months.`]];
+$('#lights').innerHTML=LT.map(([t,go,c,v,txt])=>`<button class="card light" data-go="${go}"><div class="lh"><span class="lamp ${c}"></span>${t}<span class="st ${c}">${word[c]}</span></div><div class="lv num">${v}</div><div class="ls">${esc(txt)}</div><div class="go">Open ${t.toLowerCase()} →</div></button>`).join('');
+document.querySelectorAll('#lights .light').forEach(b=>b.onclick=()=>{location.hash=b.dataset.go});
+
+// ---------- FLOW
+const SER=D.series;
+$('#flowChart').innerHTML=barChart(SER,[['billed','var(--bar-a)','Billed'],['collected','var(--bar-b)','Collected']],230);
+bindTips('#flowChart');
+const cur=SER[SER.length-1];
+$('#mthLabel').textContent=mlabel(cur.m).replace("'",' 20')+' · up to today';
+$('#mthStats').innerHTML=[['Billed',cur.billed],['Collected',cur.collected],['Bought',cur.purchased],['Paid out',cur.paid]].map(([k,v])=>`<div><div class="muted" style="font-size:12px">${k}</div><div class="mid num">${inr(v)}</div></div>`).join('');
+const b12=SER.slice(-12).reduce((a,r)=>a+r.billed,0), c12=SER.slice(-12).reduce((a,r)=>a+r.collected,0);
+const best=SER.slice(-12).reduce((a,r)=>r.billed>a.billed?r:a,SER[SER.length-1]);
+$('#flowSay').textContent=`In the last 12 months you billed ${inr(b12)} and collected ${inr(c12)}. Biggest billing month: ${mlabel(best.m).replace("'",' 20')} (${inr(best.billed)}).`;
+$('#collRatio').textContent=b12?'₹'+Math.round(c12/b12*100):'–';
+$('#collRatioNote').innerHTML=b12?(c12>=b12?'<span class="good">You are collecting faster than you bill, so old dues are coming down.</span>':`<span class="bad">${inr(b12-c12)} more was billed than collected in 12 months, and that cash is now sitting with customers.</span>`):'';
+
+// ---------- RECEIVABLES
+const R=D.recv;
+const nOld=R.customers.filter(c=>(c.oldest||0)>180).length;
+$('#recvSub').textContent=`${R.n_customers} customers owe us ${inr(H.to_collect)}. ${inr(RB['180+'])} of it is more than 6 months old${nOld?`, with ${nOld}+ customers`:''}. ${R.govt>0?`Government buyers owe ${inr(R.govt)} (${pct(R.govt,R.govt+R.private)}%).`:''}`;
+$('#ageSay').textContent=`Out of every ₹100 customers owe, ₹${Math.round((RB['180+']||0)/rtot*100)} is more than 6 months old and ₹${Math.round(((RB['0-30']||0)+(RB['31-60']||0))/rtot*100)} is less than 2 months old.`;
+$('#ageChart').innerHTML=ageBars(RB,AGEK);
+const g=R.govt,pv=R.private,tt=(g+pv)||1;{const gs=$('#govSplit');const box=gs&&gs.closest('.card');if(box)box.style.display=g>0?'':'none';const ct=$('#custTabs');if(ct)ct.style.display=g>0?'':'none';}
+$('#govSplit').innerHTML=`<div class="agebar" style="height:18px"><span style="width:${g/tt*100}%;background:var(--accent)"></span><span style="width:${pv/tt*100}%;background:var(--bar-n)"></span></div>
+ <div class="split" style="margin-top:6px"><div><div class="k"><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--accent);margin-right:5px"></i>Government</div><div class="v num">${inr(g)}</div><div class="muted" style="font-size:12px">${pct(g,tt)}% of dues</div></div>
+ <div><div class="k"><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--bar-n);margin-right:5px"></i>Private</div><div class="v num">${inr(pv)}</div><div class="muted" style="font-size:12px">${pct(pv,tt)}% of dues</div></div></div>`;
+drawCust();
+$('#rcpts').innerHTML=R.recent_receipts.length?'<table class="mini">'+R.recent_receipts.map(r=>`<tr><td class="nm">${esc(r.party)}</td><td class="muted">${new Date(r.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</td><td class="r num" style="text-align:right;font-weight:600">${inr(r.amt)}</td></tr>`).join('')+'</table>':'<div class="empty">No customer receipts entered in the last 7 days.</div>';
+$('#advSub').textContent=inr(H.advances_from_customers)+' across customer ledgers with a credit balance';
+$('#advList').innerHTML=R.advances.length?'<table class="mini">'+R.advances.slice(0,8).map(a=>`<tr><td class="nm">${esc(a.name)}</td><td class="r num" style="text-align:right">${inr(a.amt)}</td></tr>`).join('')+'</table>':'<div class="empty">None</div>';
+if(R.stale>100000){const h=$('#hygiene');h.style.display='flex';h.innerHTML=`<span style="font-size:18px">⚠</span><div><b>Tally housekeeping:</b> ${inr(R.stale)} of old customer bills still show as unpaid in Tally's bill-wise list, even though the customer ledgers say they are settled. Payments were entered "On Account" instead of against the bill. This dashboard ignores them and uses the ledger balance. Ask the accountant to clean up bill-wise allocations, oldest years first, so the collections team gets accurate bill lists.</div>`;}
+
+// ---------- PROFIT
+const keep=P.sales?Math.round(P.net_profit/P.sales*100):0;
+$('#plSub').textContent=P.sales?`Since 1 April you sold ${inr(P.sales)} and made ${inr(P.net_profit)} profit. You keep about ₹${keep} from every ₹100 of sales.`+(LY&&LY.net_profit?` Last year by this date the profit was ${inr(LY.net_profit)}.`:''):'No sales booked this financial year yet.';
+const WF=[['Sales',P.sales,'t'],['Cost of goods',-P.cogs,'d'],['Gross profit',P.gross_profit,'s'],['Running costs',-P.indirect_exp,'d'],['Other income',P.other_income,'u'],['Net profit',P.net_profit,'s']];
+$('#waterfall').innerHTML=W('#waterfall')<520?waterfallList(WF):waterfall(WF);
+bindTips('#waterfall');
+if(LY){$('#lyLabel').textContent='1 Apr '+(+M.fy_start.slice(0,4)-1)+' to the same date';
+ const rows=[['Sales',P.sales,LY.sales],['Gross profit',P.gross_profit,LY.gross_profit],['Running costs',P.indirect_exp,LY.indirect_exp,true],['Net profit',P.net_profit,LY.net_profit]];
+ $('#lyCompare').innerHTML='<table class="mini">'+rows.map(([k,a,b,inv])=>{const ch=b?Math.round((a-b)/Math.abs(b)*100):null;const good=ch==null?'':((ch>=0)!==!!inv?'good':'bad');return `<tr><td>${k}</td><td class="r num" style="text-align:right;font-weight:600">${inr(a)}</td><td class="r num muted" style="text-align:right">${inr(b)}</td><td class="r num ${good}" style="text-align:right;width:60px">${ch==null?'':(ch>=0?'▲ ':'▼ ')+Math.abs(ch)+'%'}</td></tr>`}).join('')+'</table><div class="muted" style="font-size:11.5px;margin-top:6px">This year · last year · change</div>';}
+else $('#lyCompare').innerHTML='<div class="empty">Last year\'s figures are not available in this company.</div>';
+const TE=D.pl.top_expenses, tem=Math.max(...TE.map(x=>x.amt),1);
+$('#topExp').innerHTML=TE.map(x=>hbar(x.name,x.amt,tem)).join('');
+
+// ---------- PAYABLES
+const PY=D.pay;
+$('#paySub').textContent=`We owe ${PY.n_suppliers} suppliers ${inr(H.to_pay)}. ${inr(H.pay_overdue_90)} of it is more than 3 months old.`+(H.advances_to_suppliers?` We have also paid ${inr(H.advances_to_suppliers)} to suppliers in advance.`:'');
+$('#payAge').innerHTML=ageBars(PY.buckets,AGEK,true);
+const ST=$('#suppTable tbody');ST.innerHTML='';
+PY.suppliers.slice(0,12).forEach(s=>{const tr=el('tr','click',`<td class="c-name"><div class="nm">${esc(s.name)}</div></td><td class="r num c-owe" style="font-weight:600">${inr(s.owe)}</td><td class="r num c-90 ${s.over90?'bad':'muted none'}">${s.over90?inr(s.over90):'–'}</td><td class="r num muted c-sales">${s.purch12?inr(s.purch12):'–'}</td>`);
+  tr.onclick=()=>toggleBills(tr,s.bills,4);ST.appendChild(tr);});
+
+// ---------- STOCK
+const topG=S.by_group[0];
+$('#stockSub').textContent=`${inr(S.value)} of goods across ${S.items.toLocaleString('en-IN')} items.`+(topG?` ${topG.name} alone is ${inr(topG.value)} (${pct(topG.value,S.value)}%).`:'');
+const d0=S.no_move_180[0];
+$('#deadSay').textContent=S.no_move_180_value?`${pct(S.no_move_180_value,S.value)}% of your stock has not been sold in 6 months.`+(d0?` The biggest is ${d0.name} (${inr(d0.value)}).`:''):'';
+const sgm=Math.max(...S.by_group.map(x=>x.value),1);
+$('#stockGroups').innerHTML=S.by_group.slice(0,8).map(x=>hbar(x.name,x.value,sgm,pct(x.value,S.value)+'%')).join('');
+$('#deadSub').textContent=inr(S.no_move_180_value)+' in '+S.no_move_180.length+(S.no_move_180.length>=20?'+':'')+' items';
+$('#deadList').innerHTML=S.no_move_180.length?'<table class="mini">'+S.no_move_180.slice(0,9).map(x=>`<tr><td class="nm" title="${esc(x.name)}">${esc(x.name)}<div class="faint" style="font-size:11px;font-weight:400">${esc(x.group)} · ${x.qty} ${esc(x.unit)}</div></td><td class="r num" style="text-align:right;font-weight:600">${inr(x.value)}</td></tr>`).join('')+'</table>':'<div class="empty">Everything moved.</div>';
+const tim=Math.max(...S.top_items_90.map(x=>x.value),1);
+$('#topItems').innerHTML=S.top_items_90.length?S.top_items_90.slice(0,8).map(x=>hbar(x.name,x.value,tim)).join(''):'<div class="empty">No sales in the last 90 days.</div>';
+
+// ---------- CUSTOMERS
+const CS=D.customers_sales, csm=Math.max(...CS.map(x=>x.sales12),1);
+$('#concSub').innerHTML=D.kpi.top5_share!=null?`Top 5 customers = <b>${D.kpi.top5_share}%</b> of all billing`:'';
+$('#custSay').textContent=(D.kpi.top5_share!=null?`Your top 5 customers bring ₹${Math.round(D.kpi.top5_share)} of every ₹100 billed${D.kpi.top5_share>50?', so losing one would hurt a lot':''}.`:'')+(D.inactive.length?` ${D.inactive.length} customers who bought earlier have not been billed in 90 days.`:'');
+$('#topCust').innerHTML=CS.slice(0,10).map(x=>hbar(x.name,x.sales12,csm,x.share+'%')).join('')||'<div class="empty">No billing in the last 12 months.</div>';
+$('#quiet').innerHTML=D.inactive.length?'<table class="mini"><tr><td class="faint">Customer</td><td class="faint">Last bill</td><td class="faint" style="text-align:right">Billed 12 m</td></tr>'+D.inactive.slice(0,9).map(x=>`<tr><td class="nm">${esc(x.name)}</td><td class="muted">${new Date(x.last_sale).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</td><td class="r num" style="text-align:right;font-weight:600">${inr(x.sales12)}</td></tr>`).join('')+'</table>':'<div class="empty">Every regular customer was billed in the last 90 days.</div>';
+
+// ---------- HEALTH
+const K=D.kpi;
+const kp=[['Days to get paid',K.dso,'days','On average a rupee billed takes this long to come back. Customer dues ÷ last 12 months billing × 365.',v=>v>120?'bad':v>60?'warn':'good'],
+ ['Days we take to pay',K.dpo,'days','Supplier dues ÷ last 12 months purchases × 365.',v=>''],
+ ['Days stock sits',K.dio,'days','Stock value ÷ last 12 months purchases × 365. Rough measure of how long goods stay in the godown.',v=>v>180?'bad':v>90?'warn':'good'],
+ ['Cash cycle',K.ccc,'days','Days stock sits + days to get paid − days we take to pay. How long our own money is locked in the business.',v=>v>120?'bad':v>60?'warn':'good']];
+const dur=d=>d==null?'':d<45?d+' days':'about '+(d<300?(d/30.4).toFixed(1).replace(/\.0$/,''):Math.round(d/30.4))+' months';
+const say=[v=>`Customers pay us ${dur(v)} after billing. `+(v<=45?'That is healthy.':v<=90?'That is slow.':'That is very slow, so a lot of money is stuck with customers.'),
+ v=>`We pay our suppliers ${dur(v)} after buying. `+(v>120?'Suppliers are giving us long credit.':'That is normal.'),
+ v=>`Goods sit in the godown ${dur(v)} before they sell. `+(v<=60?'That is quick.':v<=120?'That is a bit slow.':'That is slow, so cash is tied up in stock.'),
+ v=>`Our own money is locked for ${dur(v)} in every cycle of buying, stocking and getting paid. `+(v<=60?'That is good.':'Shorter is better.')];
+$('#kpis').innerHTML=kp.map(([k,v,u,t,f],i)=>`<div class="card kpi"><h3>${k} <span class="info" tabindex="0" data-tip="${esc(t)}">i</span></h3><div class="v num ${v!=null?f(v):''}">${v==null?'–':v.toLocaleString('en-IN')}<span class="muted" style="font-size:14px;font-weight:500"> ${v==null?'':u}</span></div><div class="e">${v==null?'Needs 12 months of entries':say[i](v)}</div></div>`).join('');
+$('#cashChart').innerHTML=cashChart(SER);bindTips('#cashChart');
+const AC=D.accounts, LN=D.loans;
+$('#accts').innerHTML='<table class="mini">'+AC.map(a=>`<tr><td class="nm">${esc(a.name)}</td><td class="muted">${a.type}</td><td class="r num ${a.bal<0?'bad':''}" style="text-align:right;font-weight:600">${inr(a.bal)}</td></tr>`).join('')
+ +(LN.length?`<tr><td colspan="3" class="faint" style="padding-top:12px">Loans taken</td></tr>`+LN.slice(0,8).map(l=>`<tr><td class="nm">${esc(l.name)}</td><td class="muted">Loan</td><td class="r num" style="text-align:right">${inr(l.bal)}</td></tr>`).join(''):'')
+ +(K.gst_net?`<tr><td colspan="3" class="faint" style="padding-top:12px">Taxes</td></tr><tr><td>GST & duties ledgers (net)</td><td class="muted">${K.gst_net>0?'Payable':'Credit'}</td><td class="r num" style="text-align:right">${inr(Math.abs(K.gst_net))}</td></tr>`:'')+'</table>';
+}
+
+// ---------- customer table
+let custFilter='all';
+document.querySelectorAll('#custTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#custTabs button').forEach(x=>x.classList.remove('on'));b.classList.add('on');custFilter=b.dataset.f;drawCust();});
+$('#custSearch').oninput=drawCust;
+function drawCust(){
+  const q=$('#custSearch').value.trim().toLowerCase(); const tb=$('#custTable tbody'); tb.innerHTML='';
+  let L=D.recv.customers.filter(c=>(custFilter==='all'||(custFilter==='gov')===c.govt)&&(!q||c.name.toLowerCase().includes(q)));
+  L.slice(0,q?60:15).forEach(c=>{
+    const tr=el('tr','click',`<td class="c-name"><div class="cname"><span class="nm">${esc(c.name)}</span>${c.govt?'<span class="pill gov">Govt</span>':''}</div></td>
+      <td class="r num c-owe" style="font-weight:650">${inr(c.owed)}</td><td class="r num c-90 ${c.over90?'bad':'muted none'}">${c.over90?inr(c.over90):'–'}</td>
+      <td class="r c-old"><span class="agecell" style="background:${ageColor(c.oldest)};color:${(c.oldest||0)>90?'#fff':'var(--ink)'}">${ageTxt(c.oldest)}</span></td><td class="r num muted c-sales">${c.sales12?inr(c.sales12):'–'}</td>`);
+    tr.onclick=()=>toggleBills(tr,c.bills,5,c); tb.appendChild(tr);});
+  $('#custMore').textContent=L.length>15&&!q?`Top 15 of ${L.length} customers. Search to find any customer.`:'';
+  if(window.clampLists) clampLists();
+}
+function waNum(ph){ph=String(ph||'').replace(/[^0-9]/g,'');if(ph.length===10)ph='91'+ph;else if(ph.length===11&&ph[0]==='0')ph='91'+ph.slice(1);return ph.length>=11?ph:'';}
+function remindLink(c){
+  const P=(D.parties||{})[c.name]||{}; const n=waNum(P.ph); if(!n||!(c.owed>0)) return '';
+  const co=M.company.replace(/\b\w+/g,w=>w[0]+w.slice(1).toLowerCase());
+  const old=(c.bills||[]).filter(b=>b.ref).slice(-3).map(b=>b.ref).join(', ');
+  const msg=`Dear ${c.name.replace(/\b\w+/g,w=>w[0]+w.slice(1).toLowerCase())},\n\nA friendly reminder from ${co}: as per our books, ${full(c.owed)} is outstanding${old?` (bills ${old})`:''}. Kindly arrange the payment at the earliest. Please ignore if already paid.\n\nThank you.`;
+  return `<a class="wa-remind" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${encodeURIComponent(msg)}" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:6px;margin:4px 0 8px;padding:7px 12px;border-radius:999px;background:#25D366;color:#fff;font-weight:600;font-size:13px;text-decoration:none">Send payment reminder on WhatsApp</a>`;
+}
+function toggleBills(tr,bills,cols,c){
+  const nx=tr.nextElementSibling; if(nx&&nx.classList.contains('det')){nx.remove();return;}
+  const d=el('tr','det'); d.innerHTML=`<td colspan="${cols}">`+(c?remindLink(c):'')+(bills.length?'<table class="mini">'+bills.map(b=>`<tr><td>${esc(b.ref)}</td><td class="muted">${b.date?new Date(b.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):''}</td><td><span class="agecell" style="background:${ageColor(b.age)};color:${(b.age||0)>90?'#fff':'var(--ink)'}">${ageTxt(b.age)}</span></td><td class="num" style="text-align:right;font-weight:600">${full(b.amt)}</td></tr>`).join('')+'</table>':'<span class="muted">No bill detail.</span>')+'</td>';
+  tr.after(d);
+}
+
+// ---------- charts
+function hbar(name,v,max,right){return `<div><div class="l"><span title="${esc(name)}">${esc(name)}</span><span class="num" style="font-weight:600;white-space:nowrap">${inr(v)}${right?` <span class="faint" style="font-weight:400">${right}</span>`:''}</span></div><div class="t"><div class="f" style="width:${Math.max(1.5,v/max*100)}%"></div></div></div>`}
+function ageBars(B,K,muted){const tot=Object.values(B).reduce((a,b)=>a+b,0)||1, mx=Math.max(...Object.values(B),1);
+  return '<div class="hb">'+K.map(([k,c,l])=>`<div><div class="l"><span>${l}</span><span class="num" style="font-weight:600">${inr(B[k]||0)} <span class="faint" style="font-weight:400">${pct(B[k]||0,tot)}%</span></span></div><div class="t" style="height:10px"><div class="f" style="width:${Math.max(.8,(B[k]||0)/mx*100)}%;background:${c}"></div></div></div>`).join('')+'</div>'}
+function ticks(v){if(!(v>0))return{step:1,n:4,max:4};const raw=v/4,p=Math.pow(10,Math.floor(Math.log10(raw))),n=raw/p,step=(n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p,k=Math.max(2,Math.ceil(v/step));return{step,n:k,max:step*k}}
+function axl(v){if(!v)return '0';const a=Math.abs(v);const f=(x,u)=>(+x.toFixed(x<10?1:0))+u;return a>=1e7?f(a/1e7,' Cr'):a>=1e5?f(a/1e5,' L'):a>=1e3?f(a/1e3,'K'):String(Math.round(a))}
+function niceMax(v){if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v)));const n=v/p;return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p}
+function W(id){return Math.max(260,(document.querySelector(id)||{}).clientWidth||600)}
+function barChart(S,keys,h){
+  const w=W('#flowChart'),pl=46,pr=16,pt=10,pb=24,iw=w-pl-pr,ih=h-pt-pb;
+  const T=ticks(Math.max(...S.flatMap(r=>keys.map(k=>r[k[0]])))), mx=T.max;
+  const gw=iw/S.length, bw=Math.max(3,Math.min(18,(gw-8)/keys.length));
+  let s=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="Billed vs collected by month">`;
+  for(let i=0;i<=T.n;i++){const y=pt+ih-ih*i/T.n;s+=`<line x1="${pl}" x2="${w-pr}" y1="${y}" y2="${y}" stroke="var(--line-2)"/><text x="${pl-6}" y="${y+4}" text-anchor="end">${axl(T.step*i)}</text>`}
+  S.forEach((r,i)=>{const x0=pl+gw*i+(gw-bw*keys.length-2)/2;
+    keys.forEach((k,j)=>{const v=r[k[0]],bh=v/mx*ih;s+=`<rect x="${x0+j*(bw+2)}" y="${pt+ih-bh}" width="${bw}" height="${Math.max(0,bh)}" rx="3" fill="${k[1]}"/>`});
+    s+=`<rect x="${pl+gw*i}" y="${pt}" width="${gw}" height="${ih}" fill="transparent" data-tip="<b>${mlabel(r.m)}</b><br>${keys.map(k=>k[2]+': '+full(r[k[0]])).join('<br>')}"/>`;
+    const st=Math.ceil(46/gw); if((S.length-1-i)%st==0)s+=`<text x="${pl+gw*i+gw/2}" y="${h-6}" text-anchor="middle">${mlabel(r.m)}</text>`;});
+  return s+'</svg>';
+}
+function cashChart(S){
+  const h=200,w=W('#cashChart'),pl=46,pr=16,pt=10,pb=24,iw=w-pl-pr,ih=h-pt-pb;
+  const T=ticks(Math.max(...S.map(r=>Math.max(r.cash_bank,r.od)))), mx=T.max;
+  const gw=iw/S.length,bw=Math.min(16,gw-6);
+  let s=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  for(let i=0;i<=T.n;i++){const y=pt+ih-ih*i/T.n;s+=`<line x1="${pl}" x2="${w-pr}" y1="${y}" y2="${y}" stroke="var(--line-2)"/><text x="${pl-6}" y="${y+4}" text-anchor="end">${axl(T.step*i)}</text>`}
+  let path='';
+  S.forEach((r,i)=>{const cx=pl+gw*i+gw/2,bh=r.od/mx*ih;s+=`<rect x="${cx-bw/2}" y="${pt+ih-bh}" width="${bw}" height="${bh}" rx="3" fill="var(--bad-soft)" stroke="var(--bad)" stroke-opacity=".35"/>`;
+    path+=(i?'L':'M')+cx+','+(pt+ih-r.cash_bank/mx*ih);
+    if((S.length-1-i)%Math.ceil(46/gw)==0)s+=`<text x="${cx}" y="${h-6}" text-anchor="middle">${mlabel(r.m)}</text>`;});
+  s+=`<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/>`;
+  S.forEach((r,i)=>{const cx=pl+gw*i+gw/2;s+=`<circle cx="${cx}" cy="${pt+ih-r.cash_bank/mx*ih}" r="3" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"/><rect x="${pl+gw*i}" y="${pt}" width="${gw}" height="${ih}" fill="transparent" data-tip="<b>${mlabel(r.m)}</b><br>Cash + bank: ${full(r.cash_bank)}<br>OD used: ${full(r.od)}"/>`});
+  return s+'</svg>';
+}
+function waterfall(items){
+  const h=250,w=W('#waterfall'),pl=8,pr=8,pt=22,pb=40,iw=w-pl-pr,ih=h-pt-pb;
+  let run=0;const bars=items.map(([l,v,t])=>{let a,b;if(t==='t'||t==='s'){a=0;b=v;run=v}else{a=run;b=run+v;run=b}return{l,v,t,a,b}});
+  const hi=niceMax(Math.max(...bars.map(x=>Math.max(x.a,x.b)),1)), lo=Math.min(0,...bars.map(x=>Math.min(x.a,x.b)));
+  const Y=v=>pt+ih-(v-lo)/(hi-lo)*ih, gw=iw/bars.length, bw=Math.min(64,gw*.6);
+  let s=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+  s+=`<line x1="${pl}" x2="${w-pr}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/>`;
+  bars.forEach((x,i)=>{const cx=pl+gw*i+gw/2,y1=Y(Math.max(x.a,x.b)),y2=Y(Math.min(x.a,x.b));
+    const col=x.t==='d'?'var(--bad)':x.t==='u'?'var(--good)':(x.b<0?'var(--bad-strong)':'var(--accent)');
+    s+=`<rect x="${cx-bw/2}" y="${y1}" width="${bw}" height="${Math.max(1,y2-y1)}" rx="4" fill="${col}" ${x.t==='d'||x.t==='u'?'fill-opacity=".8"':''} data-tip="<b>${x.l}</b><br>${full(x.v)}"/>`;
+    s+=`<text x="${cx}" y="${y1-6}" text-anchor="middle" style="fill:var(--ink);font-weight:600">${inr(x.v)}</text>`;
+    s+=`<text x="${cx}" y="${h-20}" text-anchor="middle">${x.l}</text>`;
+    if(x.t==='s'&&D.pl.fytd.sales&&i>0)s+=`<text x="${cx}" y="${h-6}" text-anchor="middle" class="faint">${Math.round(x.v/D.pl.fytd.sales*100)}% of sales</text>`;
+    if(i<bars.length-1){const nx=pl+gw*(i+1)+gw/2;s+=`<line x1="${cx+bw/2}" x2="${nx-bw/2}" y1="${Y(x.b)}" y2="${Y(x.b)}" stroke="var(--faint)" stroke-dasharray="3 3"/>`}});
+  return s+'</svg>';
+}
+function waterfallList(items){
+  let run=0;const rows=items.map(([l,v,t])=>{let a,b;if(t==='t'||t==='s'){a=0;b=v;run=v}else{a=run;b=run+v;run=b}return{l,v,t,a,b}});
+  const hi=Math.max(...rows.map(x=>Math.max(x.a,x.b)),1),lo=Math.min(0,...rows.map(x=>Math.min(x.a,x.b))),X=v=>(v-lo)/(hi-lo)*100;
+  return '<div class="hb">'+rows.map(x=>{const col=x.t==='d'?'var(--bad)':x.t==='u'?'var(--good)':(x.b<0?'var(--bad-strong)':'var(--accent)');const L=X(Math.min(x.a,x.b)),Wd=Math.max(1,X(Math.max(x.a,x.b))-L);
+    const strong=x.t==='t'||x.t==='s';const pc=x.t==='s'&&D.pl.fytd.sales?` <span class="faint" style="font-weight:400">${Math.round(x.v/D.pl.fytd.sales*100)}%</span>`:'';
+    return `<div><div class="l"><span style="${strong?'font-weight:650;color:var(--ink)':''}">${x.t==='d'?'− ':x.t==='u'?'+ ':''}${x.l}</span><span class="num" style="font-weight:${strong?700:600}">${inr(x.v)}${pc}</span></div><div class="t" style="height:10px;position:relative;background:var(--line-2)"><div style="position:absolute;left:${L}%;width:${Wd}%;top:0;bottom:0;border-radius:4px;background:${col}"></div></div></div>`}).join('')+'</div>';
+}
+function bindTips(sel){document.querySelectorAll(sel+' [data-tip]').forEach(n=>{n.addEventListener('mousemove',e=>{if(e.pointerType!=='touch'&&!matchMedia('(hover:none)').matches)showTip(e,n.getAttribute('data-tip'))});n.addEventListener('mouseleave',hideTip);n.addEventListener('click',e=>{showTip(e,n.getAttribute('data-tip'));tipT=setTimeout(hideTip,3500)});});}
+render();
+
+// ---------- phone: shorten long lists ----------
+window.clampLists=clampLists;function clampLists(){
+  document.querySelectorAll('.showall').forEach(b=>b.remove());
+  document.querySelectorAll('.xtra').forEach(e=>e.classList.remove('xtra'));
+  if(innerWidth>720) return;
+  const searching=$('#custSearch').value.trim();
+  const L=[['#custTable tbody',8],['#suppTable tbody',6],['#topExp',5],['#stockGroups',5],['#deadList table',5],['#topItems',5],['#topCust',6],['#quiet table',5],['#rcpts table',4],['#advList table',4]];
+  L.forEach(([sel,n])=>{if(searching&&sel.startsWith('#custTable'))return;const box=document.querySelector(sel);if(!box)return;const tb=box.tagName==='TABLE'?(box.tBodies[0]||box):box;
+    const kids=[...tb.children].filter(k=>!k.classList.contains('det'));if(kids.length<=n)return;
+    kids.slice(n).forEach(k=>k.classList.add('xtra'));
+    const btn=el('button','showall','Show all '+kids.length);btn.onclick=()=>{kids.forEach(k=>k.classList.remove('xtra'));btn.remove()};
+    (box.closest('table')||box).after(btn);});
+}
+// ---------- "Open on phone" (laptop only) ----------
+if(location.protocol.startsWith('http')&&!window.claude&&/^(127\.0\.0\.1|localhost)$/.test(location.hostname)){
+  fetch('/api/phone',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{ if(!j||!(j.url||j.remote)) return; const b=$('#phoneBtn'); b.style.display='';
+    b.textContent=j.remote?'Share with phone':'Open on phone';
+    const HINT={remote:'Works on any phone, anywhere - nothing to install. Send this link to Papa; he taps it once and adds it to his home screen. Keep it private: anyone with this link can see the numbers.',
+                lan:'Phone must be on the same office Wi-Fi as this laptop. Scan with the phone camera.'};
+    const show=mode=>{ const url=mode==='remote'?j.remote:j.url; if(!url) return;
+      $('#phoneHint').textContent=HINT[mode]; $('#phoneUrl').textContent=url;
+      $('#pmRemote').style.opacity=mode==='remote'?1:.5; $('#pmLan').style.opacity=mode==='lan'?1:.5;
+      $('#phoneWa').href='https://wa.me/?text='+encodeURIComponent('Our business dashboard (live). Tap to open, then Add to Home Screen:\n'+url);
+      $('#phoneCopy').onclick=()=>{ (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>{$('#phoneCopy').textContent='Copied';setTimeout(()=>$('#phoneCopy').textContent='Copy link',1500)}).catch(()=>{}); };
+      const box=$('#qrBox'); const draw=()=>{box.innerHTML='';new QRCode(box,{text:url,width:200,height:200,correctLevel:QRCode.CorrectLevel.M})};
+      if(window.QRCode) draw(); else { const sc=document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'; sc.onload=draw; sc.onerror=()=>{box.textContent='(QR needs internet - use the link below)'}; document.head.appendChild(sc);} };
+    if(j.remote&&j.url){ $('#phoneModes').style.display='flex'; $('#pmRemote').onclick=()=>show('remote'); $('#pmLan').onclick=()=>show('lan'); }
+    b.onclick=()=>{ $('#phoneModal').style.display='grid'; show(j.remote?'remote':'lan'); };
+  }).catch(()=>{});
+}
+// ---------- screens (one per tab) ----------
+const SCR=['today','dues','profit','stock','more'];
+function showScreen(k,fromHash){
+  if(!SCR.includes(k)) k='today';
+  document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('on',x.dataset.s===k));
+  document.querySelectorAll('#tabbar a,#topTabs a').forEach(a=>a.classList.toggle('on',a.dataset.s===k));
+  window.scrollTo(0,0); render(); syncLabel();
+}
+addEventListener('hashchange',()=>showScreen(location.hash.slice(1),true));
+showScreen(location.hash.slice(1));
+
+// ---------- WhatsApp summary ----------
+function waText(){
+  const d=new Date(M.synced_at), top=[...D.recv.customers].sort((a,b)=>b.over90-a.over90).slice(0,3);
+  const P=D.pl.fytd, LY=D.pl.ly, net=H.cash+H.bank-H.od;
+  const ch=LY&&LY.sales?Math.round((P.sales-LY.sales)/Math.abs(LY.sales)*100):null;
+  const y=(D.brief||[]).find(b=>/^Yesterday/.test(b.text));
+  let t=`*${M.company.replace(/\b\w+/g,w=>w[0]+w.slice(1).toLowerCase())}: daily summary*\n${d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}, data from Tally at ${d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}\n\n`;
+  t+=`💰 Cash position: ${inr(net)} (cash + bank ${inr(H.cash+H.bank)}, overdraft used ${inr(H.od)})\n`;
+  t+=`📥 Customers owe: ${inr(H.to_collect)} (${inr(H.overdue_90)} over 3 months)\n`;
+  t+=`📤 We owe suppliers: ${inr(H.to_pay)}\n`;
+  t+=`📦 Stock: ${inr(H.stock)}\n`;
+  t+=`📈 Sales this year: ${inr(P.sales)}${ch!=null?` (${ch>=0?'+':''}${ch}% vs last year)`:''}\n`;
+  if(y&&y.vals) t+=`🗓 Yesterday: billed ${inr(y.vals.B)}, collected ${inr(y.vals.C)}\n`;
+  if(top.length) t+=`\n*Follow up today:*\n`+top.map((c,i)=>`${i+1}. ${c.name}: ${inr(c.owed)}${c.oldest?` (oldest bill ${ageTxt(c.oldest)})`:''}`).join('\n')+'\n';
+  return t+`\n_Business Pulse_`;
+}
+$('#waBtn').onclick=async()=>{
+  const t=waText();
+  if(navigator.share&&matchMedia('(max-width:720px)').matches){try{await navigator.share({text:t});return}catch(e){if(e&&e.name==='AbortError')return}}
+  window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank','noopener');
+};
+
+// ======================= ASK (assistant) =======================
+const ask={turns:[],busy:false,ctl:null,backend:undefined};
+const AB=$('#askBody'), AI=$('#askInput'), AS=$('#askSend');
+const SUGG=['Give me a 5-line summary of the business today','Which customers should we chase for payment this week, and how much from each?','Why has our sales dropped compared with last year?','Which stock should we try to clear or return, and how much cash is locked in it?','How much do government hospitals owe us, and which ones are the oldest?','Are our running costs going up or down compared with last year?'];
+function md(src){
+  const lines=esc(src).split('\n'); let out='',list=null,tbl=null,para=[];
+  const inline=t=>t.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/(^|[^*])\*([^*\n]+)\*/g,'$1<i>$2</i>').replace(/`([^`]+)`/g,'<code>$1</code>');
+  const flushP=()=>{if(para.length){out+='<p>'+inline(para.join('<br>'))+'</p>';para=[]}};
+  const flushL=()=>{if(list){out+=`<${list.t}>`+list.items.map(i=>'<li>'+inline(i)+'</li>').join('')+`</${list.t}>`;list=null}};
+  const flushT=()=>{if(tbl){const rows=tbl.filter(r=>!/^\s*\|?\s*:?-{2,}/.test(r));out+='<table>'+rows.map((r,i)=>'<tr>'+r.replace(/^\s*\||\|\s*$/g,'').split('|').map(c=>i?'<td>'+inline(c.trim())+'</td>':'<th>'+inline(c.trim())+'</th>').join('')+'</tr>').join('')+'</table>';tbl=null}};
+  for(const l of lines){
+    if(/^\s*\|.*\|\s*$/.test(l)){flushP();flushL();(tbl=tbl||[]).push(l);continue} else flushT();
+    let m;
+    if(m=l.match(/^\s*#{1,4}\s+(.*)/)){flushP();flushL();out+='<h4>'+inline(m[1])+'</h4>';continue}
+    if(m=l.match(/^\s*[-*•]\s+(.*)/)){flushP();if(!list||list.t!=='ul'){flushL();list={t:'ul',items:[]}}list.items.push(m[1]);continue}
+    if(m=l.match(/^\s*\d+[.)]\s+(.*)/)){flushP();if(!list||list.t!=='ol'){flushL();list={t:'ol',items:[]}}list.items.push(m[1]);continue}
+    if(!l.trim()){flushP();flushL();continue}
+    flushL();para.push(l);
+  }
+  flushP();flushL();flushT();return out;
+}
+function dataPack(){
+  const p={meta:D.meta,headline:D.hero,kpis:D.kpi,profit:D.pl,months:D.series,receivable_ageing:{buckets:D.recv.buckets,stale_bills_in_tally_ignored:D.recv.stale,govt:D.recv.govt,private:D.recv.private,advances_held_top:D.recv.advances},
+    payable_ageing:{buckets:D.pay.buckets},stock_summary:{value:D.stock.value,by_group:D.stock.by_group,not_moved_180d_value:D.stock.no_move_180_value,not_moved_90d_value:D.stock.no_move_90_value},
+    bank_cash_od:D.accounts,loans:D.loans,todays_notes:(D.brief||[]).map(b=>b.text.replace(/\{(\w+)\}/g,(m,k)=>b.vals&&k in b.vals?Math.round(b.vals[k]):(k==='dir'?b.dir:k==='pct'?b.pct:''))),detail:D.chat||{}};
+  // Compact for low token use: whole rupees, 1 decimal for small ratios, only the latest 80 vouchers.
+  if(p.detail&&Array.isArray(p.detail.recent_vouchers)) p.detail={...p.detail,recent_vouchers:p.detail.recent_vouchers.slice(0,80)};
+  const rnd=(k,v)=>typeof v==='number'&&!Number.isInteger(v)?(Math.abs(v)>=100?Math.round(v):Math.round(v*10)/10):v;
+  let s=JSON.stringify(p,rnd);
+  if(s.length>190000&&p.detail){p.detail={...p.detail,recent_vouchers:(p.detail.recent_vouchers||[]).slice(0,150),customer_bills:{},customers:(p.detail.customers||[]).slice(0,200)};s=JSON.stringify(p,rnd);}
+  return s;
+}
+function system(){
+  return `You are the finance assistant inside "Business Pulse", the owner's dashboard for ${M.company}${M.about?' ('+M.about+')':', an Indian business that keeps its books in Tally'}. The person asking is the owner or their family; they are not accountants.
+
+Answer ONLY from the DATA below, which was synced read-only from their Tally books at ${M.synced_at} (today is ${M.today}; financial year starts ${M.fy_start}).
+
+How to answer:
+- Lead with the direct answer in one or two sentences, with the number. Then at most 6 short bullets or one small table. No long essays.
+- Money in Indian style: ₹ with lakh (L) and crore (Cr), e.g. ₹12.4 L, ₹1.07 Cr.
+- Name specific customers, suppliers, items, months and amounts. Be concrete and practical: say what to do, whom to call, what to check.
+- Reply in the user's language and style (English, Hindi or Hinglish).
+- Questions may come from voice typing, so names and numbers can be misheard (e.g. a short name misheard). Match them to the closest customer, supplier or item in the data and say which one you used.
+- If the data cannot answer it, say exactly what is missing (e.g. item-wise profit margin, batch expiry dates, anything before ${D.series[0].m}) and suggest where to find it in Tally. Never invent numbers or names. Mark estimates as estimates.
+- Do not give investment, tax-filing or legal advice; for those say to check with the CA.
+
+How the numbers were made (use when explaining):
+- Amounts owed use party LEDGER balances. Age is worked out by matching each balance to that party's newest open bills first, counted from the bill date. "No bill ref" = balance with no matching bill.
+- Tally's bill-wise list also has old bills that are actually settled (entered "On Account"); they are ignored and their total is "stale_bills_in_tally_ignored".
+- billed/collected = customer side of Sales/Receipt vouchers incl. GST. net_sales = sales accounts excl. GST. Credit notes and journal deductions (e.g. TDS) are separate.
+- Profit = sales − (opening stock + purchases + direct expenses − closing stock) − indirect expenses + other income, from ledger balances; year-end entries may be missing.
+- In "customers", balance > 0 means they owe us; < 0 means they paid in advance / we hold their money. In "suppliers", > 0 means we owe them.
+- "govt" customers are identified by name (Government, Department, Directorate, Municipal, etc.).
+- Column meanings for the "detail" tables are listed in detail.columns.
+
+DATA:
+${dataPack()}`;
+}
+async function backend(){
+  if(ask.backend!==undefined) return ask.backend;
+  let b=null;
+  try{ if(window.claude&&window.claude.use){ const s=await window.claude.use('sample'); if(s) b={kind:'claude',sample:s}; } }catch(e){}
+  if(!b&&location.protocol.startsWith('http')&&!window.claude){
+    try{const r=await fetch('/api/status',{cache:'no-store'});const j=await r.json(); b=j.ai?{kind:'local',model:j.model}:{kind:'nokey'};}catch(e){}
+  }
+  ask.backend=b; return b;
+}
+function scrollEnd(){AB.scrollTop=AB.scrollHeight}
+function drawEmpty(){
+  AB.innerHTML='';
+  const w=el('div','msg a',`<p><b>Namaste!</b> Ask me anything about ${esc(M.company.replace(/\b\w+/g,w=>w[0]+w.slice(1).toLowerCase()))}: who owes money, why sales moved, what stock is stuck, what to do this week.</p>`);
+  AB.appendChild(w);
+  const sg=el('div','sugg'); SUGG.forEach(q=>{const b=el('button',null,esc(q));b.onclick=()=>send(q);sg.appendChild(b)}); AB.appendChild(sg);
+}
+function setupCard(b){
+  let h;
+  if(location.protocol==='file:') h='<b>Open the live dashboard to chat.</b><br>The assistant runs through the sync program. Double-click <code>START_DASHBOARD.bat</code>; it opens the dashboard at <code>http://127.0.0.1:8765</code> with chat switched on.';
+  else if(b&&b.kind==='nokey'&&/^(127\.0\.0\.1|localhost)$/.test(location.hostname)){
+    AB.innerHTML='';
+    const c=el('div','setup keybox',`<b>Switch on Ask Pulse</b><p style="margin:6px 0 10px">Paste your Anthropic API key below (it starts with <code>sk-ant-</code>). Get one at <b>console.anthropic.com</b> &rarr; API Keys.</p>
+      <input id="keyIn" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-..." style="width:100%;box-sizing:border-box;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px">
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px"><button class="btn" id="keySave" style="background:var(--accent);color:#fff;border-color:var(--accent)">Save &amp; switch on</button><span id="keyMsg" style="font-size:12.5px"></span></div>
+      <p style="margin:10px 0 0;font-size:12px;color:var(--muted)">Saved only on this laptop (ai_key.txt). Questions and summary numbers are sent to Anthropic to answer; nothing is written to Tally.</p>`);
+    AB.appendChild(c);
+    const inp=$('#keyIn'), btn=$('#keySave'), msg=$('#keyMsg');
+    const save=async()=>{ const k=inp.value.trim(); if(!/^sk-ant-/.test(k)){msg.textContent='That does not look like a key - it should start with sk-ant-';msg.style.color='var(--bad)';return}
+      btn.disabled=true; msg.style.color='var(--muted)'; msg.textContent='Checking the key...';
+      try{ const r=await fetch('/api/key',{method:'POST',headers:{'Content-Type':'application/json','X-TMS':'1'},body:JSON.stringify({key:k})}); const j=await r.json().catch(()=>({}));
+        if(r.ok&&j.ok){ msg.style.color='var(--good)'; msg.textContent='Saved. Ask Pulse is on.'; inp.value=''; ask.backend=undefined; setTimeout(()=>openAsk(),700); }
+        else { msg.style.color='var(--bad)'; msg.textContent=j.error||'Could not save the key'; btn.disabled=false; } }
+      catch(e){ msg.style.color='var(--bad)'; msg.textContent='Could not reach the sync program - is the black window open?'; btn.disabled=false; } };
+    btn.onclick=save; inp.addEventListener('keydown',e=>{if(e.key==='Enter')save()}); setTimeout(()=>inp.focus(),50);
+    return;
+  }
+  else h='<b>The assistant is not available in this view.</b><br>Open the dashboard from <code>START_DASHBOARD.bat</code> on the office laptop.';
+  AB.innerHTML=''; AB.appendChild(el('div','setup',h));
+}
+async function openAsk(q){
+  $('#askPanel').classList.add('open');
+  $('#askSub').textContent='Answers from Tally data synced '+synced.toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  if(!ask.turns.length&&!ask.busy){AB.innerHTML='<div class="thinking"><i></i><i></i><i></i>&nbsp;Connecting</div>';}
+  const b=await backend();
+  if(!b||b.kind==='nokey'){setupCard(b);AI.disabled=true;AS.disabled=true;return}
+  AI.disabled=false;AS.disabled=false;
+  if(!ask.turns.length&&!ask.busy) drawEmpty();
+  if(q) send(q); else AI.focus();
+}
+$('#askFab').onclick=()=>openAsk();
+$('#askClose').onclick=()=>$('#askPanel').classList.remove('open');
+$('#askClear').onclick=()=>{if(ask.ctl)ask.ctl.abort();ask.turns=[];ask.busy=false;setBusy(false);drawEmpty()};
+document.addEventListener('click',e=>{const t=e.target.closest('.askwhy');if(t)openAsk('Explain this and tell me what to do about it: '+t.dataset.q)});
+AI.addEventListener('input',()=>{AI.style.height='auto';AI.style.height=Math.min(140,AI.scrollHeight)+'px'});
+AI.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(!ask.busy)send(AI.value)}});
+AS.onclick=()=>{if(ask.busy){ask.ctl&&ask.ctl.abort();}else send(AI.value)};
+const SEND_ICON=AS.innerHTML, STOP_ICON='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+function setBusy(v){ask.busy=v;AS.innerHTML=v?STOP_ICON:SEND_ICON;AS.setAttribute('aria-label',v?'Stop':'Send')}
+async function send(q){
+  q=(q||'').trim(); if(!q||ask.busy) return;
+  const b=await backend(); if(!b||b.kind==='nokey') return;
+  if(!ask.turns.length) AB.innerHTML='';
+  AI.value='';AI.style.height='auto';
+  AB.appendChild(el('div','msg u',esc(q)));
+  const bub=el('div','msg a','<div class="thinking"><i></i><i></i><i></i>&nbsp;Reading your books…</div>'); AB.appendChild(bub); scrollEnd();
+  ask.turns.push({role:'user',content:q}); if(ask.turns.length>14) ask.turns=ask.turns.slice(-14);
+  if(ask.turns[0].role!=='user') ask.turns.shift();
+  setBusy(true); const ctl=ask.ctl=new AbortController(); let text='';
+  const show=t=>{text=t;bub.innerHTML=md(t);scrollEnd()};
+  try{
+    if(b.kind==='claude'){
+      const r=await b.sample([{role:'user',content:system()},...ask.turns],{cache:false,signal:ctl.signal,onText:({text})=>show(text)});
+      text=r.text; show(text); if(r.truncated) bub.appendChild(el('div','msg err','(Answer was cut short. Ask for less at a time.)'));
+    } else {
+      const res=await fetch('/api/chat',{method:'POST',signal:ctl.signal,headers:{'Content-Type':'application/json','X-TMS':'1'},body:JSON.stringify({system:system(),messages:ask.turns})});
+      if(!res.ok||!res.body) throw {code:'http',message:await res.text()};
+      const rd=res.body.getReader(), dec=new TextDecoder(); let buf='';
+      for(;;){const {done,value}=await rd.read(); if(done)break; buf+=dec.decode(value,{stream:true});
+        let i; while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i).trim(); buf=buf.slice(i+1);
+          if(!line.startsWith('data:'))continue; let ev; try{ev=JSON.parse(line.slice(5))}catch(e){continue}
+          if(ev.type==='content_block_delta'&&ev.delta&&ev.delta.type==='text_delta') show(text+ev.delta.text);
+          else if(ev.type==='error') throw {code:'api',message:(ev.error&&ev.error.message)||'error'};}}
+      if(!text) throw {code:'empty',message:'No answer came back.'};
+    }
+    ask.turns.push({role:'assistant',content:text});
+  }catch(e){
+    const code=e&&e.code;
+    if(code==='cancelled'||(e&&e.name==='AbortError')){ if(!text) bub.innerHTML='<span class="muted">Stopped.</span>'; if(text) ask.turns.push({role:'assistant',content:text}); else ask.turns.pop(); }
+    else { ask.turns.pop(); if(e&&e.text) show(e.text);
+      const msg=code==='not_granted'||code==='sampling_disabled'?'Claude is not allowed for this page. Allow it from the page\'s permissions to use chat.':code==='rate_limited'?'Too many questions right now. Try again in a minute.':code==='prompt_too_large'?'Too much data to send. Start a new chat.':(e&&e.message&&/api[_ ]key|authentication|401/i.test(e.message))?'The API key was not accepted. Check ai_key.txt.':'Could not get an answer. Try again.';
+      bub.appendChild(el('div','msg err',msg)); }
+  }finally{ setBusy(false); if(ask.ctl===ctl) ask.ctl=null; scrollEnd(); }
+}
+backend();
+
+// ---------- voice input ----------
+(function(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition, mic=$('#askMic'), lang=$('#askLang'), PH=innerWidth<=720?'Ask, or tap the mic':'Ask anything, in English or Hindi';
+  if(!SR||!window.isSecureContext){
+    // phones opening the laptop over Wi-Fi (plain http) cannot use the page mic: point to the keyboard's mic instead
+    AI.placeholder=innerWidth<=720?'Type, or use the keyboard 🎤':'Type, or tap 🎤 on your keyboard to speak';
+    return;
+  }
+  mic.style.display='';lang.style.display='';AI.placeholder=PH;
+  let L='en-IN'; try{L=localStorage.getItem('tms-voice')||'en-IN'}catch(e){}
+  const setL=()=>{lang.textContent=L==='hi-IN'?'हि':'EN';lang.title=L==='hi-IN'?'Voice: Hindi (tap for English)':'Voice: English (tap for Hindi)'};setL();
+  lang.onclick=()=>{L=L==='hi-IN'?'en-IN':'hi-IN';setL();try{localStorage.setItem('tms-voice',L)}catch(e){}};
+  let rec=null, base='';
+  const stop=()=>{try{rec&&rec.stop()}catch(e){}};
+  mic.onclick=()=>{
+    if(rec){stop();return}
+    if(ask.busy) return;
+    rec=new SR(); rec.lang=L; rec.interimResults=true; rec.continuous=false; rec.maxAlternatives=1;
+    base=AI.value?AI.value.trim()+' ':''; let finalTxt='';
+    mic.classList.add('rec'); mic.setAttribute('aria-label','Stop listening'); AI.placeholder=L==='hi-IN'?'बोलिए…':'Listening…';
+    rec.onresult=e=>{let interim='';finalTxt='';for(const r of e.results){if(r.isFinal)finalTxt+=r[0].transcript;else interim+=r[0].transcript}
+      AI.value=base+finalTxt+interim; AI.dispatchEvent(new Event('input'));};
+    rec.onerror=e=>{ if(e.error==='not-allowed'||e.error==='service-not-allowed') AI.placeholder='Microphone blocked. Allow it in the browser, or use the keyboard mic.'; };
+    rec.onend=()=>{mic.classList.remove('rec');mic.setAttribute('aria-label','Speak your question');AI.placeholder=PH;rec=null;
+      if(finalTxt.trim()) send(AI.value);};
+    try{rec.start()}catch(e){mic.classList.remove('rec');rec=null}
+  };
+})();
+
+// ---------- live refresh without losing the chat ----------
+if(location.protocol.startsWith('http')&&!window.claude){
+  setInterval(async()=>{try{const r=await fetch('/data.json',{cache:'no-store'});if(!r.ok)return;const j=await r.json();if(j.meta&&j.meta.synced_at!==D.meta.synced_at){D=j;bind();render();syncLabel();}}catch(e){}},60000);
+} else if(location.protocol==='file:'){
+  setTimeout(function again(){ if(!ask.turns.length&&!$('#askPanel').classList.contains('open')) location.reload(); else setTimeout(again,60000); },300000);
+}
+let rt,lastW=innerWidth;addEventListener('resize',()=>{if(innerWidth===lastW)return;lastW=innerWidth;clearTimeout(rt);rt=setTimeout(render,150)});
+})();
+</script>
+</body>
+</html>

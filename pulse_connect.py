@@ -16,7 +16,7 @@ import sys, threading, time, traceback, urllib.error, urllib.request, webbrowser
 from pathlib import Path
 from types import SimpleNamespace
 
-VERSION = "1.1.3"
+VERSION = "1.2.0"
 APP = "Pulse Connect"
 UI_PORT = 47819
 SITE = "https://tms-pulse-blush.vercel.app"
@@ -423,6 +423,7 @@ class Connector:
             s.update({"business": self.cfg.get("business"), "paired": bool(self.cfg.get("push_key")), "company": self.cfg.get("company"),
                       "companies": [c["name"] for c in self.companies], "tally": self.tally, "machine": machine_name(),
                       "last_sync": self.last_sync, "last_sync_ago": ago(self.last_sync), "dashboard": SITE,
+                      "dashboard_url": self.dashboard_url(), "phone": self.cfg.get("phone"),
                       "syncing": self.syncing, "fix": self.fix, "version": VERSION})
             return s
 
@@ -463,7 +464,7 @@ class Connector:
             return {"ok": False, "error": "Couldn't connect just now. Check the internet and try again."}
         with self.lock:
             if self.cfg.get("code") != code:      # a different business: start fresh (first full upload)
-                for k in ("last_sync_ts", "last_alt", "settings"): self.cfg.pop(k, None)
+                for k in ("last_sync_ts", "last_alt", "settings", "view_key", "phone"): self.cfg.pop(k, None)
                 self.last_sync = None; self.last_alt = None
                 try: (HOME / "month_sig.json").unlink()
                 except Exception: pass
@@ -475,13 +476,37 @@ class Connector:
         self.wake.set()
         return {"ok": True, "business": self.cfg.get("business")}
 
+    def signup(self, name, phone):
+        """New business straight from the app: create its private dashboard, then connect this computer to it."""
+        name = " ".join((name or "").split())[:100]
+        digits = re.sub(r"[^0-9]", "", phone or "")
+        if len(name) < 2:
+            return {"ok": False, "error": "Please enter your business name."}
+        if digits and not (len(digits) == 10 or (len(digits) == 12 and digits.startswith("91"))):
+            return {"ok": False, "error": "Please check the WhatsApp number (10 digits)."}
+        try:
+            r = rpc("create_business", {"p_name": name, "p_phone": digits or None})
+        except Exception:
+            return {"ok": False, "error": "Couldn't create it just now. Check the internet and try again."}
+        res = self.pair(r["setup_code"])
+        if res.get("ok"):
+            with self.lock:
+                self.cfg["view_key"] = r["view_key"]; self.cfg["phone"] = digits
+                save_cfg(self.cfg)
+            log("new business created from the app:", name)
+        return res
+
+    def dashboard_url(self):
+        k = self.cfg.get("view_key")
+        return SITE + "/?k=" + k if k else None
+
     def write_cloud_cfg(self):
         if not self.cfg.get("push_key"): return
         (HOME / "cloud_config.txt").write_text("supabase_url={}\nsupabase_key={}\npush_key={}\n".format(SB_URL, SB_KEY, self.cfg["push_key"]), encoding="utf-8")
 
     def unpair(self):
         with self.lock:
-            for k in ("code", "push_key", "business", "company", "last_alt", "last_sync_ts"): self.cfg.pop(k, None)
+            for k in ("code", "push_key", "business", "company", "last_alt", "last_sync_ts", "view_key", "phone"): self.cfg.pop(k, None)
             save_cfg(self.cfg)
         try: (HOME / "cloud_config.txt").unlink()
         except Exception: pass
@@ -831,6 +856,8 @@ class UI(http.server.BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(min(n, 20000)) or b"{}")
         except Exception: body = {}
         p = self.path.split("?")[0]
+        if p == "/api/signup" and o != SITE:
+            return self._send(200, C.signup(body.get("name"), body.get("phone")))
         if p in ("/api/pair", "/pair"):
             if C.cfg.get("push_key") and p == "/pair" and body.get("code", "").upper() == C.cfg.get("code"):
                 return self._send(200, {"ok": True, "business": C.cfg.get("business")})

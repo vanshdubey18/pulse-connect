@@ -68,6 +68,15 @@ kbd{font:600 13px ui-monospace,Consolas,monospace;background:var(--bg);border:1p
 @keyframes pulse{50%{opacity:.25;transform:scale(.7)}}
 .foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:16px;color:var(--mut);font-size:13px}
 .foot a{color:var(--mut)}
+.field{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
+input.txt{font:inherit;font-size:17px;width:100%;max-width:420px;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);outline:none}
+input.txt:focus{border-color:var(--acc)}
+.link{background:none;border:0;padding:0;color:var(--acc);font-weight:600;cursor:pointer;text-decoration:underline}
+.dash{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:14px}
+.dash .qr{background:#fff;padding:8px;border-radius:10px;line-height:0}
+.dash .qr svg{width:132px;height:132px}
+.dash .url{font-size:13px;color:var(--mut);word-break:break-all;margin:6px 0 10px}
+.wa{background:#25D366;color:#fff}
 .lang{background:none;color:var(--mut);border:1px solid var(--line);padding:5px 10px;font-size:13px;margin-left:auto}
 </style>
 </head>
@@ -82,12 +91,13 @@ kbd{font:600 13px ui-monospace,Consolas,monospace;background:var(--bg);border:1p
   <div class="card" id="main"><div class="wait"><span class="dot"></span><span>Starting…</span></div></div>
   <div class="foot"><span id="foot"></span><span><a href="#" id="unpair" style="display:none">Disconnect this computer</a></span></div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 let S={}, lang='en', tabPick=null, typing=false;
 try{lang=localStorage.getItem('pc-lang')||'en'}catch(e){}
 const T={
- en:{pair:'Enter your setup code',pairP:'It\'s on the setup page that was sent to you — 8 letters and numbers, like K7M2QX9P.',connect:'Connect',
+ en:{newT:'Create your business dashboard',newP:'Enter your business name and WhatsApp number. Your private dashboard is ready in a few minutes — nothing in Tally is changed.',bizName:'Business name',waNo:'Your WhatsApp number',create:'Create my dashboard',haveCode:'I have a setup code',noCode:'Create a new dashboard instead',dashT:'Your dashboard',dashP:'Scan with your phone camera to open it. Keep this link private — it shows your numbers.',sendWa:'Send to my WhatsApp',copy:'Copy link',pair:'Enter your setup code',pairP:'It\'s on the setup page that was sent to you — 8 letters and numbers, like K7M2QX9P.',connect:'Connect',
   openT:'Open Tally',openTP:'Open Tally and your company. We\'ll take it from there — nothing else to do.',openBtn:'Open Tally for me',waitT:'Waiting for Tally…',
   portT:'One setting to switch on in Tally',portP:'Tally is open, but it isn\'t sharing data with other apps yet. This is a one-time switch.',
   doIt:'Do it for me',doItP:'Tally will close and open again. Save your work first. Takes about a minute.',self:'Or do it yourself (1 minute)',
@@ -97,7 +107,7 @@ const T={
   liveT:'You\'re connected',liveP:'The dashboard updates by itself whenever something changes in Tally. You can close this window — Pulse runs quietly and starts with Windows.',
   syncNow:'Sync now',change:'Change company',errT:'Couldn\'t read the books',retry:'Try again',noCoT:'Open your company in Tally',
   last:'Last update',company:'Company',tally:'Tally',computer:'Computer'},
- hi:{pair:'सेटअप कोड डालें',pairP:'यह उस सेटअप पेज पर है जो आपको भेजा गया था — 8 अक्षर/नंबर, जैसे K7M2QX9P.',connect:'कनेक्ट करें',
+ hi:{newT:'अपना बिज़नेस डैशबोर्ड बनाएं',newP:'बिज़नेस का नाम और WhatsApp नंबर डालें। कुछ मिनट में आपका प्राइवेट डैशबोर्ड तैयार — Tally में कुछ नहीं बदलता।',bizName:'बिज़नेस का नाम',waNo:'आपका WhatsApp नंबर',create:'डैशबोर्ड बनाएं',haveCode:'मेरे पास सेटअप कोड है',noCode:'नया डैशबोर्ड बनाएं',dashT:'आपका डैशबोर्ड',dashP:'फ़ोन के कैमरे से स्कैन करके खोलें। यह लिंक प्राइवेट रखें — इसमें आपके नंबर हैं।',sendWa:'मेरे WhatsApp पर भेजें',copy:'लिंक कॉपी करें',pair:'सेटअप कोड डालें',pairP:'यह उस सेटअप पेज पर है जो आपको भेजा गया था — 8 अक्षर/नंबर, जैसे K7M2QX9P.',connect:'कनेक्ट करें',
   openT:'Tally खोलें',openTP:'Tally और अपनी कंपनी खोलें। बाकी हम कर लेंगे।',openBtn:'Tally खोलो',waitT:'Tally का इंतज़ार…',
   portT:'Tally में एक सेटिंग चालू करनी है',portP:'Tally खुला है, पर अभी दूसरे ऐप्स से डेटा शेयर नहीं कर रहा। यह सिर्फ एक बार करना है।',
   doIt:'मेरे लिए कर दो',doItP:'Tally बंद होकर फिर से खुलेगा। पहले अपना काम सेव करें। लगभग 1 मिनट।',self:'या खुद करें (1 मिनट)',
@@ -138,6 +148,18 @@ function manual(prod){
    <ol class="steps">${steps.map(s=>`<li>${s}</li>`).join('')}</ol><p class="note" style="margin-top:8px">We notice the moment it's on — no need to come back here.</p>`;
 }
 
+let codeMode=false;
+function waNum(p){p=String(p||'').replace(/\D/g,'');if(p.length===10)p='91'+p;return p.length>=11?p:'';}
+function qrSvg(u){try{const q=qrcode(0,'M');q.addData(u);q.make();return q.createSvgTag({cellSize:4,margin:0});}catch(e){return '';}}
+function dashCard(s){
+  if(!s.dashboard_url) return '';
+  const msg=encodeURIComponent((s.business||'My business')+' — Business Pulse dashboard (private):\n'+s.dashboard_url);
+  const wa='https://wa.me/'+waNum(s.phone)+'?text='+msg;
+  const q=qrSvg(s.dashboard_url);
+  return `<div class="dash">${q?`<div class="qr">${q}</div>`:''}<div style="flex:1;min-width:220px"><h3 style="margin:0 0 4px">${t('dashT')}</h3>
+    <p class="note" style="margin:0">${t('dashP')}</p><div class="url">${esc(s.dashboard_url)}</div>
+    <div class="row" style="margin-top:6px"><a class="btn wa" href="${wa}" target="_blank" rel="noopener">${t('sendWa')}</a><button class="ghost" id="cpyDash">${t('copy')}</button></div></div></div>`;
+}
 function render(){
   const s=S, m=$('#main'), step=s.step;
   const lvl={pair:1,pairing:1,open_tally:2,port_off:2,remote:2,no_company:2,company_closed:2,company:3,syncing:3,error:3,live:4}[step]||1;
@@ -146,11 +168,17 @@ function render(){
   $('#foot').textContent=[s.machine,'v'+(s.version||'')].filter(Boolean).join(' · ');
   $('#unpair').style.display=s.paired?'':'none';
   $('#lang').textContent=lang==='hi'?'English':'हिंदी';
-  if(typing&&step==='pair') return;
+  if(typing&&(step==='pair'||step==='pairing')) return;
   let h='';
-  if(step==='pair'||step==='pairing'){
+  if((step==='pair'||step==='pairing')&&!codeMode){
+    h=head('link',t('newT'),t('newP'))+`<form id="sf" autocomplete="on"><label class="field" for="bn">${t('bizName')}</label><input class="txt" id="bn" maxlength="100" placeholder="Shree Ganesh Traders" autofocus>
+      <label class="field" for="bp">${t('waNo')}</label><input class="txt" id="bp" type="tel" maxlength="16" placeholder="98765 43210">
+      <div class="row"><button id="sgo">${t('create')}</button></div></form><div class="err" id="serr"></div>
+      <p class="note" style="margin-top:6px"><button class="link" id="toCode">${t('haveCode')}</button></p>`;
+  } else if(step==='pair'||step==='pairing'){
     h=head('link',t('pair'),t('pairP'))+`<form id="pf" class="row" autocomplete="off"><input class="code" id="code" maxlength="14" placeholder="K7M2QX9P" spellcheck="false" autofocus>
-      <button id="go">${t('connect')}</button></form><div class="err" id="perr"></div>`;
+      <button id="go">${t('connect')}</button></form><div class="err" id="perr"></div>
+      <p class="note" style="margin-top:6px"><button class="link" id="toNew">${t('noCode')}</button></p>`;
   } else if(step==='open_tally'){
     const can=(s.tally.installs||[]).length||s.tally.exe;
     h=head('tally',t('openT'),t('openTP'))+(can?`<div class="row"><button onclick="act('open_tally')">${t('openBtn')}</button></div>`:'')+waiting(t('waitT'));
@@ -180,13 +208,22 @@ function render(){
     h=head('check',t('liveT'),t('liveP'),'good')+`<div class="facts"><div><small>${t('company')}</small><b>${esc(title(s.company))}</b></div>
       <div><small>${t('tally')}</small><b>${esc([s.tally.product,s.tally.release].filter(Boolean).join(' ')||'Tally')}${s.tally.vcc&&!s.tally.pids?.length?' (cloud)':''}</b></div>
       <div><small>${t('last')}</small><b>${esc(s.last_sync_ago||'—')}</b></div></div>
-      <div class="row"><button onclick="act('sync_now')">${t('syncNow')}</button>${(s.companies||[]).length>1?`<button class="ghost" onclick="act('change_company')">${t('change')}</button>`:''}</div>`;
+      <div class="row"><button onclick="act('sync_now')">${t('syncNow')}</button>${(s.companies||[]).length>1?`<button class="ghost" onclick="act('change_company')">${t('change')}</button>`:''}</div>`+dashCard(s);
   } else if(step==='error'){
-    h=head('warn',t('errT'),esc(s.detail),'warn')+`<div class="row"><button onclick="act('sync_now')">${t('retry')}</button></div>`;
+    h=head('warn',t('errT'),esc(s.detail),'warn')+`<div class="row"><button onclick="act('sync_now')">${t('retry')}</button></div>`+dashCard(s);
   } else h=waiting(s.title||'Starting…');
+  if(['syncing','port_off','open_tally','remote','no_company','company_closed','company'].includes(step)) h+=dashCard(s);
   m.innerHTML=h;
   m.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tabPick=b.dataset.tab;render();});
   m.querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>post('/api/company',{name:b.dataset.co}).then(load));
+  const sf=$('#sf');
+  if(sf){[$('#bn'),$('#bp')].forEach(i=>i.oninput=()=>{typing=true;});
+    sf.onsubmit=async e=>{e.preventDefault();$('#sgo').disabled=true;$('#serr').textContent='';
+      const r=await post('/api/signup',{name:$('#bn').value,phone:$('#bp').value}); $('#sgo').disabled=false;
+      if(r.ok){typing=false;prevS='';load();} else $('#serr').textContent=r.error||'Something went wrong.';};}
+  const tc=$('#toCode'); if(tc) tc.onclick=e=>{e.preventDefault();codeMode=true;typing=false;render();};
+  const tn=$('#toNew'); if(tn) tn.onclick=e=>{e.preventDefault();codeMode=false;typing=false;render();};
+  const cpy=$('#cpyDash'); if(cpy) cpy.onclick=async()=>{try{await navigator.clipboard.writeText(S.dashboard_url);cpy.textContent='✓';}catch(e){prompt('',S.dashboard_url)}};
   const pf=$('#pf');
   if(pf){const inp=$('#code');
     inp.oninput=()=>{typing=inp.value.length>0;};
